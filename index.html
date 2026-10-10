@@ -1,0 +1,568 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project 520 — MCAT Prep, Planned</title>
+<meta name="description" content="A handcrafted MCAT prep schedule built around your timeline, your resources and your study habits, with full Anki integration and mastery-driven CARS. Start with a free strategy consult.">
+<meta property="og:title" content="Project 520 — Plan · Prepare · Perform">
+<meta property="og:description" content="Stop managing your MCAT prep. Get a personalized schedule and know exactly what to do next.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232354d4'/%3E%3Ctext x='32' y='42' font-family='Arial' font-weight='700' font-size='26' fill='white' text-anchor='middle'%3E520%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root {
+  --bg: #f3f5f8;
+  --surface: #ffffff;
+  --ink: #132031;
+  --muted: #566677;
+  --line: #d6dde5;
+  --soft: #eaf0fa;
+  --accent: #2354d4;
+  --accent-hover: #1b44b0;
+  --accent-ink: #ffffff;
+  --bb: #17936a;
+  --cp: #cf7a1f;
+  --ps: #8556cc;
+  --il: #c8326b;
+  --font-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --radius: 14px;
+  --wrap: 1080px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1218; --surface: #151c25; --ink: #e5ecf3; --muted: #93a2b2; --line: #27313c;
+    --soft: #1b2736; --accent: #7ba6ff; --accent-hover: #9bbcff; --accent-ink: #0d1218;
+    --bb: #3fc590; --cp: #f2a54c; --ps: #b995f2; --il: #ff7aa8; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1218; --surface: #151c25; --ink: #e5ecf3; --muted: #93a2b2; --line: #27313c;
+  --soft: #1b2736; --accent: #7ba6ff; --accent-hover: #9bbcff; --accent-ink: #0d1218;
+  --bb: #3fc590; --cp: #f2a54c; --ps: #b995f2; --il: #ff7aa8; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 400 17px/1.6 var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); }
+img, svg { display: block; max-width: 100%; }
+.wrap { max-width: var(--wrap); margin: 0 auto; padding: 0 24px; }
+h1, h2, h3 { font-family: var(--font-display); line-height: 1.12; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: clamp(2.3rem, 5.4vw, 3.9rem); font-weight: 800; }
+h2 { font-size: clamp(1.75rem, 3.4vw, 2.5rem); font-weight: 700; }
+h3 { font-size: 1.2rem; font-weight: 700; }
+p { margin: 0; }
+.eyebrow {
+  font: 500 0.78rem/1 var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 14px;
+}
+.lede { color: var(--muted); font-size: 1.12rem; max-width: 36em; }
+section { padding: 88px 0; }
+.section-head { max-width: 680px; margin-bottom: 44px; }
+.section-head p { margin-top: 14px; }
+
+/* nav */
+.nav { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid transparent; transition: border-color .2s; }
+.nav.scrolled { border-bottom-color: var(--line); }
+.nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 64px; gap: 16px; }
+.brand { font: 800 1.15rem/1 var(--font-display); color: var(--ink); text-decoration: none; letter-spacing: 0.01em; display: flex; align-items: center; gap: 10px; }
+.brand-mark { width: 30px; height: 30px; border-radius: 8px; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font: 700 0.72rem/1 var(--font-mono); }
+.nav-links { display: flex; align-items: center; gap: 26px; }
+.nav-links a { color: var(--muted); text-decoration: none; font-weight: 500; font-size: 0.95rem; }
+.nav-links a:hover { color: var(--ink); }
+.nav-links .btn { color: var(--accent-ink); }
+
+/* buttons */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 14px 24px; border-radius: 999px; border: 1px solid transparent;
+  font: 600 1rem/1 var(--font-body); text-decoration: none; cursor: pointer;
+  transition: background .15s, transform .15s, border-color .15s;
+}
+.btn-primary { background: var(--accent); color: var(--accent-ink); }
+.btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); }
+.btn-ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+.btn-ghost:hover { border-color: var(--ink); }
+.btn-sm { padding: 10px 18px; font-size: 0.92rem; }
+.btn .arrow { transition: transform .15s; }
+.btn:hover .arrow { transform: translateX(3px); }
+
+/* hero */
+.hero { padding: 72px 0 96px; }
+.hero .wrap { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 56px; align-items: center; }
+.hero h1 .hl { color: var(--accent); }
+.hero .lede { margin-top: 22px; }
+.hero-ctas { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 34px; }
+.hero-note { margin-top: 16px; font-size: 0.9rem; color: var(--muted); }
+.tagline { display: flex; gap: 10px; font: 500 0.82rem/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 22px; }
+.tagline span:nth-child(odd) { color: var(--ink); }
+
+.schedule-card {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 18px;
+  padding: 22px; box-shadow: 0 24px 60px -30px rgba(19, 32, 49, 0.35);
+}
+.sc-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px; }
+.sc-head strong { font: 700 1.05rem/1 var(--font-display); }
+.sc-head span { font: 500 0.75rem/1 var(--font-mono); color: var(--muted); }
+.sc-row { display: grid; grid-template-columns: 6px 1fr auto; gap: 12px; align-items: center; padding: 11px 0; border-top: 1px solid var(--line); }
+.sc-row:first-of-type { border-top: 0; }
+.sc-bar { width: 6px; height: 30px; border-radius: 3px; }
+.sc-row b { font-weight: 600; font-size: 0.95rem; display: block; }
+.sc-row small { color: var(--muted); font-size: 0.82rem; }
+.sc-tag { font: 500 0.7rem/1 var(--font-mono); padding: 5px 8px; border-radius: 6px; background: var(--soft); color: var(--muted); white-space: nowrap; }
+.sc-foot { margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--line); font-size: 0.85rem; color: var(--muted); display: flex; justify-content: space-between; }
+.sc-foot b { color: var(--bb); font-weight: 600; }
+
+/* problem */
+.problem { background: var(--surface); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.problem .wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: start; }
+.problem-list { display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; }
+.problem-list li { display: grid; grid-template-columns: 34px 1fr; gap: 14px; padding: 18px; border-radius: var(--radius); background: var(--bg); border: 1px solid var(--line); }
+.problem-list .x { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: color-mix(in srgb, var(--il) 14%, transparent); color: var(--il); font: 600 0.95rem/1 var(--font-mono); }
+.problem-list b { display: block; font-weight: 600; margin-bottom: 2px; }
+.problem-list span { color: var(--muted); font-size: 0.95rem; }
+
+/* steps */
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; counter-reset: step; }
+.step { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 28px; position: relative; }
+.step-num { font: 500 0.8rem/1 var(--font-mono); color: var(--accent); letter-spacing: 0.1em; margin-bottom: 18px; display: block; }
+.step h3 { margin-bottom: 10px; }
+.step p { color: var(--muted); font-size: 0.97rem; }
+.step .free { display: inline-block; margin-top: 16px; font: 500 0.72rem/1 var(--font-mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--bb); background: color-mix(in srgb, var(--bb) 12%, transparent); padding: 6px 9px; border-radius: 6px; }
+
+/* features */
+.features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.feature { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 28px; border-top: 4px solid var(--c); }
+.feature h3 { margin-bottom: 10px; }
+.feature > p { color: var(--muted); font-size: 0.97rem; }
+.feature ul { margin: 18px 0 0; padding: 0; list-style: none; display: grid; gap: 9px; }
+.feature li { font-size: 0.93rem; padding-left: 22px; position: relative; }
+.feature li::before { content: ""; position: absolute; left: 3px; top: 0.58em; width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
+
+/* nexus */
+.nexus-band { background: var(--ink); color: var(--bg); border-radius: 22px; padding: 56px; display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; overflow: hidden; }
+.nexus-band .eyebrow { color: var(--il); }
+.nexus-band p { color: color-mix(in srgb, var(--bg) 72%, var(--ink)); margin-top: 14px; }
+.nexus-band .btn-primary { background: var(--bg); color: var(--ink); margin-top: 28px; }
+.nexus-band .btn-primary:hover { background: var(--surface); }
+.nexus-svg { width: 100%; height: auto; }
+
+/* plans */
+.plans { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.plan { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 32px; display: flex; flex-direction: column; }
+.plan.featured { border: 2px solid var(--accent); position: relative; }
+.plan-badge { position: absolute; top: -13px; left: 32px; background: var(--accent); color: var(--accent-ink); font: 500 0.72rem/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; padding: 7px 10px; border-radius: 6px; }
+.plan h3 { font-size: 1.5rem; }
+.price { margin: 16px 0 6px; font: 800 2.8rem/1 var(--font-display); }
+.price small { font: 500 1rem/1 var(--font-body); color: var(--muted); }
+.plan .price-note { color: var(--muted); font-size: 0.88rem; min-height: 1.4em; }
+.plan > p.desc { margin-top: 18px; color: var(--muted); font-size: 0.97rem; flex: 1; }
+.plan .btn { margin-top: 26px; align-self: flex-start; }
+
+.compare { margin-top: 40px; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
+.compare table { width: 100%; border-collapse: collapse; }
+.compare th, .compare td { padding: 13px 20px; text-align: left; border-top: 1px solid var(--line); font-size: 0.95rem; }
+.compare thead th { border-top: 0; background: var(--soft); font: 600 0.78rem/1.2 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.compare th.c, .compare td.c { text-align: center; width: 110px; }
+.compare .group td { background: var(--bg); font: 500 0.75rem/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); padding-top: 12px; padding-bottom: 12px; }
+.yes { color: var(--bb); font-weight: 700; }
+.no { color: var(--line); }
+.footnotes { margin-top: 18px; color: var(--muted); font-size: 0.85rem; display: grid; gap: 4px; }
+
+/* founder */
+.founder { display: grid; grid-template-columns: 220px 1fr; gap: 48px; align-items: center; max-width: 900px; }
+.avatar { width: 220px; height: 220px; border-radius: 50%; background: linear-gradient(140deg, var(--accent), var(--ps)); display: grid; place-items: center; color: #fff; font: 800 4.2rem/1 var(--font-display); }
+.founder p { color: var(--muted); margin-top: 14px; font-size: 1.05rem; }
+.founder .sig { color: var(--ink); font-weight: 600; margin-top: 20px; }
+
+/* faq */
+.faq { max-width: 780px; display: grid; gap: 12px; }
+.faq details { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 0 22px; }
+.faq summary { cursor: pointer; list-style: none; padding: 20px 0; font-weight: 600; display: flex; justify-content: space-between; gap: 16px; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: "+"; font: 500 1.3rem/1 var(--font-mono); color: var(--accent); transition: transform .2s; }
+.faq details[open] summary::after { transform: rotate(45deg); }
+.faq details p { color: var(--muted); padding-bottom: 20px; font-size: 0.97rem; }
+
+/* final cta */
+.final { text-align: center; padding: 96px 0 104px; }
+.final h2 { max-width: 16em; margin: 0 auto; }
+.final .lede { margin: 18px auto 0; }
+.final .hero-ctas { justify-content: center; }
+
+footer { border-top: 1px solid var(--line); padding: 32px 0 40px; color: var(--muted); font-size: 0.88rem; }
+footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; }
+footer a { color: var(--muted); }
+.theme-btn { background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 999px; padding: 6px 12px; font: 500 0.8rem/1 var(--font-mono); cursor: pointer; }
+
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+
+@media (max-width: 900px) {
+  section { padding: 64px 0; }
+  .hero { padding: 40px 0 64px; }
+  .hero .wrap, .problem .wrap, .nexus-band, .plans { grid-template-columns: 1fr; }
+  .hero .wrap { gap: 40px; }
+  .steps, .features { grid-template-columns: 1fr; }
+  .nexus-band { padding: 36px 28px; gap: 28px; }
+  .founder { grid-template-columns: 1fr; gap: 28px; }
+  .avatar { width: 140px; height: 140px; font-size: 2.8rem; }
+  .nav-links a:not(.btn) { display: none; }
+}
+@media (max-width: 560px) {
+  .wrap { padding: 0 16px; }
+  body { font-size: 16px; }
+  .compare th, .compare td { padding: 11px 12px; font-size: 0.88rem; }
+  .compare th.c, .compare td.c { width: 64px; }
+  .plan { padding: 26px 22px; }
+  .hero-ctas .btn { width: 100%; }
+  .brand-text { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  * { transition: none !important; }
+}
+</style>
+</head>
+<body>
+
+<!--
+  ===== EDIT THESE LINKS =====
+  Every "Get your free strategy consult" button uses FORM_URL below.
+  Search this file for FORM_URL to find it (near the bottom, in the <script>).
+-->
+
+<header class="nav" id="nav">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="Project 520 home"><span class="brand-mark">520</span><span class="brand-text">PROJECT 520</span></a>
+    <nav class="nav-links" aria-label="Main">
+      <a href="#how">How it works</a>
+      <a href="#plans">Plans</a>
+      <a href="/nexus/">The Nexus</a>
+      <a class="btn btn-primary btn-sm js-consult" href="#">Free consult</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <div class="tagline"><span>Plan</span><span>·</span><span>Prepare</span><span>·</span><span>Perform</span></div>
+        <h1>Stop managing your MCAT prep. <span class="hl">Start doing it.</span></h1>
+        <p class="lede">Between an overwhelming sea of third-party resources and mountains of conflicting advice, managing your preparation has become a problem of its own. Project 520 builds you a handcrafted schedule, so you never have to wonder what to do next.</p>
+        <div class="hero-ctas">
+          <a class="btn btn-primary js-consult" href="#">Get your free strategy consult <span class="arrow">→</span></a>
+          <a class="btn btn-ghost" href="#how">See how it works</a>
+        </div>
+        <p class="hero-note">Starts with a short intake survey. No payment needed.</p>
+      </div>
+
+      <div class="schedule-card" aria-label="Example of a personalized daily schedule">
+        <div class="sc-head"><strong>Today's plan</strong><span>WEEK 6 · DAY 3</span></div>
+        <div class="sc-row"><span class="sc-bar" style="background:var(--bb)"></span><div><b>Enzyme kinetics</b><small>Content review · Kaplan Biochem ch. 2</small></div><span class="sc-tag">60 min</span></div>
+        <div class="sc-row"><span class="sc-bar" style="background:var(--il)"></span><div><b>Anki: today's tag</b><small>New cards unsuspended · reviews due</small></div><span class="sc-tag">45 min</span></div>
+        <div class="sc-row"><span class="sc-bar" style="background:var(--ps)"></span><div><b>CARS · Phase 2</b><small>3 timed passages · review every miss</small></div><span class="sc-tag">50 min</span></div>
+        <div class="sc-row"><span class="sc-bar" style="background:var(--cp)"></span><div><b>Mixed practice set</b><small>Kinetics + thermodynamics, interleaved</small></div><span class="sc-tag">40 min</span></div>
+        <div class="sc-foot"><span>Built around your timeline</span><b>On track</b></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="problem">
+    <div class="wrap">
+      <div>
+        <p class="eyebrow">The real problem</p>
+        <h2>Most students don't fail on content. They fail on management.</h2>
+        <p class="lede" style="margin-top:16px">You can have every book, every Q-bank and every Anki deck and still lose months to a plan that was never built for you. These are the mistakes I see most.</p>
+      </div>
+      <ul class="problem-list">
+        <li><span class="x">01</span><div><b>Resource overload</b><span>Buying everything and finishing nothing.</span></div></li>
+        <li><span class="x">02</span><div><b>Copying someone else's schedule</b><span>A 528 scorer's plan was built for their life, not yours.</span></div></li>
+        <li><span class="x">03</span><div><b>Starting practice questions too late</b><span>Content review alone doesn't build test performance.</span></div></li>
+        <li><span class="x">04</span><div><b>Misusing or skipping Anki</b><span>Unfocused decks, runaway review counts, or no spaced repetition at all.</span></div></li>
+        <li><span class="x">05</span><div><b>Not interleaving</b><span>Studying topics in isolation instead of mixing the ones that belong together.</span></div></li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="how">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">How it works</p>
+        <h2>Three steps to a plan that's actually yours.</h2>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <span class="step-num">STEP 01</span>
+          <h3>Take the intake survey</h3>
+          <p>Tell me your test date, your hours, your resources and your study habits. You'll get a diagnostic summary of where your prep stands.</p>
+          <span class="free">Free</span>
+        </div>
+        <div class="step">
+          <span class="step-num">STEP 02</span>
+          <h3>Book a strategy consult</h3>
+          <p>We'll go over your diagnostic together, talk through your timeline and figure out whether Core or Coaching fits you, or whether you need either.</p>
+          <span class="free">Free</span>
+        </div>
+        <div class="step">
+          <span class="step-num">STEP 03</span>
+          <h3>Get your schedule</h3>
+          <p>I build your day-by-day plan around your timeline and resources, with Anki and CARS training built in. Every day, you'll know exactly what to do.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="padding-top:0">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">What you get</p>
+        <h2>Engineered around you, not a template.</h2>
+      </div>
+      <div class="features">
+        <div class="feature" style="--c:var(--accent)">
+          <h3>Personalized schedule</h3>
+          <p>A handcrafted plan built from your timeline, your study habits and the resources you've chosen.</p>
+          <ul>
+            <li>Day-by-day tasks from now to test day</li>
+            <li>Resource catalog and recommendations</li>
+            <li>Performance tracking tools</li>
+          </ul>
+        </div>
+        <div class="feature" style="--c:var(--il)">
+          <h3>Full Anki integration</h3>
+          <p>Daily tags in your schedule sync with the AnKing MCAT deck, so your cards follow your content.</p>
+          <ul>
+            <li>Setup and orientation guides</li>
+            <li>Personal workflow and deck settings</li>
+            <li>Missed-questions-to-cards guide</li>
+          </ul>
+        </div>
+        <div class="feature" style="--c:var(--ps)">
+          <h3>Mastery-driven CARS</h3>
+          <p>A phased training program that moves forward on your accuracy and timing, not the calendar.</p>
+          <ul>
+            <li>Phased progression</li>
+            <li>Accuracy and timing benchmarks</li>
+            <li>Changes show up in your schedule automatically</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="padding-top:0">
+    <div class="wrap">
+      <div class="nexus-band">
+        <div>
+          <p class="eyebrow">Free tool</p>
+          <h2>See how the MCAT fits together.</h2>
+          <p>The PROJECT520 Nexus is an interactive map of MCAT concepts. Every connection comes with an explanation of why it matters, and every topic comes with the three topics most worth studying alongside it.</p>
+          <a class="btn btn-primary" href="/nexus/">Explore the Nexus <span class="arrow">→</span></a>
+        </div>
+        <svg class="nexus-svg" viewBox="0 0 400 300" role="img" aria-label="Illustration of connected concept nodes">
+          <g stroke="currentColor" stroke-opacity="0.22" stroke-width="1.5" fill="none" style="color:var(--bg)">
+            <path d="M80 70 L190 120 L300 60 M190 120 L150 220 L270 230 L300 60 M190 120 L270 230 M80 70 L60 180 L150 220 M300 60 L350 160 L270 230"/>
+          </g>
+          <path d="M60 180 Q 200 280 350 160" stroke="var(--il)" stroke-width="2" stroke-dasharray="5 6" fill="none"/>
+          <g>
+            <circle cx="190" cy="120" r="22" fill="var(--accent)"/>
+            <circle cx="80" cy="70" r="13" fill="var(--bb)"/>
+            <circle cx="300" cy="60" r="16" fill="var(--cp)"/>
+            <circle cx="150" cy="220" r="12" fill="var(--bb)"/>
+            <circle cx="270" cy="230" r="14" fill="var(--ps)"/>
+            <circle cx="60" cy="180" r="15" fill="none" stroke="var(--il)" stroke-width="3"/>
+            <circle cx="60" cy="180" r="9" fill="var(--cp)"/>
+            <circle cx="350" cy="160" r="15" fill="none" stroke="var(--il)" stroke-width="3"/>
+            <circle cx="350" cy="160" r="9" fill="var(--bb)"/>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <section id="plans" style="padding-top:24px">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Plans</p>
+        <h2>Pick the level of support you need.</h2>
+        <p class="lede">Not sure which one fits? That's what the free strategy consult is for.</p>
+      </div>
+      <div class="plans">
+        <div class="plan">
+          <h3>Core</h3>
+          <div class="price">$249 <small>one time</small></div>
+          <p class="price-note">Upgrade to Coaching anytime. Your $249 counts toward the first month.</p>
+          <p class="desc">I build your personalized schedule and give you every tool to run it. You interpret your performance and make adjustments yourself. Best for independent students who want a great plan and the structure to follow it.</p>
+          <a class="btn btn-ghost js-consult" href="#">Start with a free consult <span class="arrow">→</span></a>
+        </div>
+        <div class="plan featured">
+          <span class="plan-badge">Most support</span>
+          <h3>Coaching</h3>
+          <div class="price">$349 <small>/ month</small></div>
+          <p class="price-note">3-month minimum.</p>
+          <p class="desc">Everything in Core, plus ongoing 1:1 support. I monitor your adherence, metrics and circumstances, and adjust your schedule as things change. Best for students who want a partner keeping them on track to test day.</p>
+          <a class="btn btn-primary js-consult" href="#">Start with a free consult <span class="arrow">→</span></a>
+        </div>
+      </div>
+
+      <div class="compare">
+        <table>
+          <thead><tr><th scope="col">Feature</th><th scope="col" class="c">Core</th><th scope="col" class="c">Coaching</th></tr></thead>
+          <tbody>
+            <tr class="group"><td colspan="3">Your plan</td></tr>
+            <tr><td>Resource catalog and recommendations</td><td class="c yes" aria-label="Included">✓</td><td class="c yes" aria-label="Included">✓</td></tr>
+            <tr><td>Personalized study schedule</td><td class="c yes" aria-label="Included">✓</td><td class="c yes" aria-label="Included">✓</td></tr>
+            <tr><td>Anki orientation and workflow guide</td><td class="c yes" aria-label="Included">✓</td><td class="c yes" aria-label="Included">✓</td></tr>
+            <tr><td>Full integration with the AnKing MCAT deck</td><td class="c yes" aria-label="Included">✓</td><td class="c yes" aria-label="Included">✓</td></tr>
+            <tr><td>CARS mastery-driven training program</td><td class="c yes" aria-label="Included">✓</td><td class="c yes" aria-label="Included">✓</td></tr>
+            <tr><td>Performance tracking tools</td><td class="c yes" aria-label="Included">✓</td><td class="c yes" aria-label="Included">✓</td></tr>
+            <tr class="group"><td colspan="3">Ongoing coaching</td></tr>
+            <tr><td>Ongoing schedule management</td><td class="c no" aria-label="Not included">—</td><td class="c yes" aria-label="Included">✓</td></tr>
+            <tr><td>Weekly 1:1 coaching sessions and performance analysis</td><td class="c no" aria-label="Not included">—</td><td class="c yes" aria-label="Included">✓</td></tr>
+            <tr><td>Individualized performance-based recommendations</td><td class="c no" aria-label="Not included">—</td><td class="c yes" aria-label="Included">✓</td></tr>
+            <tr><td>Targeted intervention and supplemental resources</td><td class="c no" aria-label="Not included">—</td><td class="c yes" aria-label="Included">✓</td></tr>
+            <tr><td>Q-bank performance analysis</td><td class="c no" aria-label="Not included">—</td><td class="c yes" aria-label="Included">✓</td></tr>
+            <tr><td>Full-length performance analysis</td><td class="c no" aria-label="Not included">—</td><td class="c yes" aria-label="Included">✓</td></tr>
+            <tr><td>Anki progress review</td><td class="c no" aria-label="Not included">—</td><td class="c yes" aria-label="Included">✓</td></tr>
+            <tr><td>Ongoing accountability and support</td><td class="c no" aria-label="Not included">—</td><td class="c yes" aria-label="Included">✓</td></tr>
+            <tr><td>Custom exam-week strategy and recommendations</td><td class="c no" aria-label="Not included">—</td><td class="c yes" aria-label="Included">✓</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="footnotes">
+        <p>Currently supported content review resources: Kaplan, The Princeton Review, UWorld and Khan Academy.</p>
+        <p>Coaching has a 3-month minimum.</p>
+      </div>
+    </div>
+  </section>
+
+  <section style="padding-top:24px">
+    <div class="wrap">
+      <div class="founder">
+        <div class="avatar" aria-hidden="true">N</div>
+        <!-- To use a real photo, replace the div above with:
+             <img class="avatar" src="nate.jpg" alt="Nate, founder of Project 520" style="object-fit:cover"> -->
+        <div>
+          <p class="eyebrow">Who's behind this</p>
+          <h2>Hi, I'm Nate.</h2>
+          <p>I took the MCAT in 2016, and I remember how much of my energy went into figuring out <em>what</em> to study instead of actually studying. Project 520 is the set of tools and strategies I wish I'd had back then.</p>
+          <p>Every schedule is built by hand. No templates, no algorithms guessing at your life.</p>
+          <p class="sig">— Nate, founder of Project 520</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="padding-top:24px">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Questions</p>
+        <h2>Good to know.</h2>
+      </div>
+      <div class="faq">
+        <details>
+          <summary>What happens after I fill out the intake survey?</summary>
+          <p>You'll get a diagnostic summary of your prep, then a link to book your free strategy consult. We'll go over the diagnostic together on the call.</p>
+        </details>
+        <details>
+          <summary>Is the strategy consult really free?</summary>
+          <p>Yes. There's no obligation to buy anything. If you leave with a clearer plan and never sign up, that's still a good call.</p>
+        </details>
+        <details>
+          <summary>Which prep resources do you support?</summary>
+          <p>Content review schedules currently support Kaplan, The Princeton Review, UWorld and Khan Academy. Anki integration uses the AnKing MCAT deck.</p>
+        </details>
+        <details>
+          <summary>Can I switch from Core to Coaching later?</summary>
+          <p>Yes. Upgrade anytime, and what you paid for Core is credited toward your first month of Coaching.</p>
+        </details>
+        <details>
+          <summary>How far out from my test date should I start?</summary>
+          <p>Earlier is easier, but schedules can be built for most timelines. Put your test date in the intake survey and we'll talk about what's realistic on the call.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <section class="final">
+    <div class="wrap">
+      <h2>Know exactly what to do next, every day until test day.</h2>
+      <p class="lede">Take the intake survey and book your free strategy consult. It takes about five minutes.</p>
+      <div class="hero-ctas" style="margin-top:32px">
+        <a class="btn btn-primary js-consult" href="#">Get your free strategy consult <span class="arrow">→</span></a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <p>© <span id="yr">2026</span> Project 520. MCAT® is a registered trademark of the Association of American Medical Colleges (AAMC).</p>
+      <p>Project 520 is not affiliated with or endorsed by the AAMC.</p>
+    </div>
+    <div style="display:flex;gap:16px;align-items:center">
+      <a href="/nexus/">The Nexus</a>
+      <a href="mailto:hello@project520.com" id="contact">Contact</a>
+      <button class="theme-btn" id="themeBtn" type="button" aria-label="Toggle light or dark theme">Theme</button>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // ===== EDIT ME =====
+  // Paste your Google Form link here. Every consult button on the page uses it.
+  var FORM_URL = "https://forms.gle/REPLACE_WITH_YOUR_FORM";
+  // Your contact email (footer link).
+  var CONTACT_EMAIL = "hello@project520.com";
+  // ===================
+
+  // Optional source tracking: visiting project520.com/?src=youtube passes "youtube" on to the form,
+  // if you set FORM_SRC_FIELD to your form's prefill entry id (e.g. "entry.123456789"). Leave blank to skip.
+  var FORM_SRC_FIELD = "";
+
+  (function () {
+    var url = FORM_URL;
+    try {
+      var src = new URLSearchParams(location.search).get("src");
+      if (src && FORM_SRC_FIELD) {
+        url += (url.indexOf("?") === -1 ? "?" : "&") + "usp=pp_url&" + FORM_SRC_FIELD + "=" + encodeURIComponent(src);
+      }
+    } catch (e) {}
+    document.querySelectorAll(".js-consult").forEach(function (a) {
+      a.href = url; a.target = "_blank"; a.rel = "noopener";
+    });
+    var c = document.getElementById("contact");
+    c.href = "mailto:" + CONTACT_EMAIL;
+    document.getElementById("yr").textContent = new Date().getFullYear();
+
+    var nav = document.getElementById("nav");
+    var onScroll = function () { nav.classList.toggle("scrolled", window.scrollY > 8); };
+    window.addEventListener("scroll", onScroll, { passive: true }); onScroll();
+
+    var root = document.documentElement;
+    try { var saved = localStorage.getItem("p520-theme"); if (saved) root.setAttribute("data-theme", saved); } catch (e) {}
+    document.getElementById("themeBtn").addEventListener("click", function () {
+      var dark = root.getAttribute("data-theme") === "dark" ||
+        (!root.getAttribute("data-theme") && matchMedia("(prefers-color-scheme: dark)").matches);
+      var next = dark ? "light" : "dark";
+      root.setAttribute("data-theme", next);
+      try { localStorage.setItem("p520-theme", next); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>
