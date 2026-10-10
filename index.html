@@ -6,7 +6,7 @@
 <title>Project 520 — MCAT Prep, Planned</title>
 <meta name="description" content="A handcrafted MCAT prep schedule built around your timeline, your resources and your study habits, with full Anki integration and mastery-driven CARS. Start with a free strategy consult.">
 <meta property="og:title" content="Project 520 — Plan · Prepare · Perform">
-<meta property="og:description" content="Stop managing your MCAT prep. Get a personalized schedule and know exactly what to do next.">
+<meta property="og:description" content="Stop guessing. Start preparing. Get a personalized schedule and know exactly what to do next.">
 <meta property="og:type" content="website">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232354d4'/%3E%3Ctext x='32' y='42' font-family='Arial' font-weight='700' font-size='26' fill='white' text-anchor='middle'%3E520%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -82,6 +82,12 @@ section { padding: 56px 0; border-top: 1px solid var(--line); }
 .note { font-size: 0.9rem; color: var(--muted); margin-top: 14px; }
 
 
+.value { font: 600 clamp(1.1rem, 2.4vw, 1.3rem)/1.4 var(--font-head); color: var(--ink); margin: 18px 0 0; }
+
+
+.step-label { display: block; font: 700 0.75rem/1 var(--font-head); letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin: 8px 0 6px; }
+.plan .weekly { font-size: 0.9rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 12px; }
+
 /* steps */
 .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 24px; }
 .steps li { display: grid; grid-template-columns: 40px 1fr; gap: 14px; }
@@ -132,7 +138,7 @@ section { padding: 56px 0; border-top: 1px solid var(--line); }
 
 /* final */
 .final { text-align: center; }
-.final h2 { margin-bottom: 12px; }
+.quote { margin: 0 auto 22px; max-width: 22em; font: 700 clamp(1.4rem, 3.4vw, 1.9rem)/1.3 var(--font-head); color: var(--ink); }
 .final .ctas { justify-content: center; }
 
 footer { border-top: 1px solid var(--line); padding: 28px 0 40px; color: var(--muted); font-size: 0.85rem; }
@@ -182,13 +188,21 @@ footer a { color: var(--muted); }
   <section class="hero">
     <div class="wrap">
       <div class="tagline">Plan · Prepare · Perform</div>
-      <h1>Stop managing your MCAT prep. <span class="hl">Start doing it.</span></h1>
+      <h1>Stop guessing. <span class="hl">Start preparing.</span></h1>
+      <p class="value">You shouldn't have to become an MCAT prep expert just to prepare for the MCAT.</p>
       <p class="lede">Between an overwhelming sea of third-party resources and mountains of conflicting advice, managing your preparation has become a problem of its own. Project 520 builds you a handcrafted schedule, so you never have to wonder what to do next.</p>
       <div class="ctas">
         <a class="btn js-consult" href="#">Get your free strategy consult →</a>
-        <a class="btn btn-plain" href="#how">See how it works</a>
       </div>
       <p class="note">Starts with a short survey. No payment needed.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2>Not a tutor. Not another resource.</h2>
+      <p class="muted">You already have great materials: Kaplan, UWorld, AAMC, Anki. What's missing is the system that ties them together. Project 520 organizes the resources you have into one plan and helps you manage it through test day.</p>
+      <p class="muted">A tutor teaches you the content. Doing it yourself means building and managing the plan on your own. Project 520 does the part in between: your plan is built for you, and you focus on studying.</p>
     </div>
   </section>
 
@@ -199,20 +213,23 @@ footer a { color: var(--muted); }
         <li>
           <span class="step-num">1</span>
           <div>
-            <h3>Take the survey <span class="free">Free</span></h3>
+            <span class="step-label">Assess</span>
+            <h3>Take the survey</h3>
             <p>Tell me your test date, your hours, your resources and where you're starting from.</p>
           </div>
         </li>
         <li>
           <span class="step-num">2</span>
           <div>
-            <h3>Book a free strategy consultation <span class="free">Free</span></h3>
+            <span class="step-label">Plan</span>
+            <h3>Book a free strategy consultation</h3>
             <p>We'll go over your survey answers together, talk through your timeline and I'll explain how my 1-on-1 coaching system works and what personalized support could look like for you. If I think you can succeed without coaching, I'll tell you that too. </p>
           </div>
         </li>
         <li>
           <span class="step-num">3</span>
           <div>
+            <span class="step-label">Execute</span>
             <h3>Get your schedule</h3>
             <p>I build your day-by-day plan around your timeline and resources, with Anki integration and a CARS training protocol built in. Every day, you'll know exactly what you should be doing.</p>
           </div>
@@ -235,19 +252,18 @@ footer a { color: var(--muted); }
         </div>
         <div>
           <h3>Full Anki integration</h3>
-          <p>Anki tags from the AnKing MCAT deck that match each day's review content are displayed right on your schedule.</p>
+          <p>Anki tags from the AnKing MCAT deck that match each day's review content are displayed right on your schedule, using a tool I built.</p>
           <ul>
             <li>Setup and orientation guides</li>
             <li>Personal workflow and deck settings</li>
-            <li>Missed-questions-to-cards guide</li>
           </ul>
         </div>
         <div>
           <h3>Mastery-driven CARS</h3>
-          <p>A phased training protocol that moves forward on your accuracy and timing.</p>
+          <p>A phased training protocol that moves forward on your accuracy, pacing, and stamina.</p>
           <ul>
             <li>Phased progression</li>
-            <li>Accuracy and timing benchmarks</li>
+            <li>Accuracy, pacing and stamina benchmarks</li>
             <li>Changes show up in your schedule automatically</li>
           </ul>
         </div>
@@ -264,14 +280,15 @@ footer a { color: var(--muted); }
           <h3>Core</h3>
           <div class="price">$249 <small>one time</small></div>
           <p class="price-note">Upgrade to Coaching anytime. Your $249 counts toward the first month.</p>
-          <p class="desc">I build your personalized schedule and give you every tool to run it. You interpret your performance and make adjustments yourself. Best for independent students who want a great plan and the structure to follow it.</p>
+          <p class="desc">I build your personalized schedule and give you every tool to run it. You interpret your performance and make adjustments yourself. Best for independent students who want an easy-to-follow, structured plan.</p>
           <a class="btn btn-plain js-consult" href="#">Start with a free consult →</a>
         </div>
         <div class="plan featured">
           <h3>Coaching</h3>
           <div class="price">$349 <small>/ month</small></div>
           <p class="price-note">3-month minimum.</p>
-          <p class="desc">Everything in Core, plus ongoing 1:1 support. I monitor your adherence, metrics and circumstances, and adjust your schedule as things change. Best for students who want a partner keeping them on track to test day.</p>
+          <p class="desc">Everything in Core, plus ongoing 1:1 support from yours truly. I monitor your adherence, performance metrics and evolving circumstances to adjust your schedule as things change. Best for students who want ongoing guidance, accountability, and a plan that evolves with them.</p>
+          <p class="weekly">Each week I review your schedule adherence, Anki retention, Q-bank performance, full-length results and weak topics, then adjust your workload, practice volume or strategy.</p>
           <a class="btn js-consult" href="#">Start with a free consult →</a>
         </div>
       </div>
@@ -311,6 +328,8 @@ footer a { color: var(--muted); }
           <p>I am an MCAT coach specializing in structured, personalized MCAT preparation. I am a 95th percentile MCAT scorer and Presidential Scholarship recipient from the University of Toledo College of Medicine.</p>
           <p>I took the MCAT in 2016, and I remember how much of my energy went into figuring out <em>what</em> to study instead of actually studying. Project 520 is the set of tools and strategies I wish I'd had back then.</p>
           <p>Every schedule is built by hand. No templates.</p>
+          <p>The name is the goal: a 520-level score, earned through deliberate preparation instead of a pile of disconnected resources.</p>
+          <p>I work with a small number of Coaching students at a time, so every plan gets my full attention.</p>
           <p class="sig">— Nate, founder of Project 520</p>
         </div>
       </div>
@@ -347,6 +366,7 @@ footer a { color: var(--muted); }
 
   <section class="final">
     <div class="wrap">
+      <blockquote class="quote">“You should never have to wonder what you should be doing next.”</blockquote>
       <p class="muted">Take the survey and book your free strategy consult. It takes about five minutes.</p>
       <div class="ctas">
         <a class="btn js-consult" href="#">Get your free strategy consult →</a>
