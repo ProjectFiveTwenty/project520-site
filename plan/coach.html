@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Project 520 Control Panel</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400&display=swap">
+<link rel="stylesheet" href="p520.css">
+<style>
+  .cp { display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); gap: 20px; align-items: start; }
+  .side { display: grid; gap: 16px; }
+  .side .panel + .panel { margin-top: 0; }
+  .stack { display: grid; gap: 14px; min-width: 0; }
+  .stack > *, .side > * { min-width: 0; }
+  .offs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .off-tag { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: 999px; padding: 4px 6px 4px 10px; font-size: 0.85rem; }
+  .off-tag button { border: 0; background: var(--soft); color: var(--muted); border-radius: 50%; width: 20px; height: 20px; cursor: pointer; line-height: 1; }
+  .off-tag button:hover { color: var(--rose); }
+  .inline { display: flex; gap: 8px; }
+  .inline > :first-child { flex: 1; }
+  .qt input[type="number"] { width: 72px; }
+  .qt td, .qt th { padding: 6px 6px; }
+  .warn { color: var(--rose); font-size: 0.82rem; margin: 6px 0 0; }
+  .derived { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  .derived .stat { min-width: 0; }
+  .link-box { font: 400 0.78rem/1.4 var(--font-mono); background: var(--soft); border: 1px solid var(--line); border-radius: 8px; padding: 10px; word-break: break-all; max-height: 92px; overflow-y: auto; }
+
+  /* compact schedule preview, laid out like the sheet's Schedule tab */
+  .pv-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+  table.pv { border-collapse: collapse; width: 100%; min-width: 860px; font-size: 0.76rem; line-height: 1.3; }
+  table.pv th { position: sticky; top: 0; background: var(--soft); font: 700 0.7rem/1 var(--font-head); letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); padding: 8px 6px; text-align: left; border-bottom: 1px solid var(--line); }
+  table.pv td { vertical-align: top; padding: 7px 6px; border-bottom: 1px solid var(--line); border-left: 1px solid var(--line); width: 13.5%; }
+  table.pv td.wk { border-left: 0; width: 5.5%; font: 700 0.76rem/1.2 var(--font-head); white-space: nowrap; }
+  table.pv td.wk span { display: block; font: 500 0.66rem/1.3 var(--font-body); color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  .pv .d { font-weight: 700; font-variant-numeric: tabular-nums; margin-bottom: 3px; }
+  .pv .c { color: var(--accent); }
+  .pv .cars { color: var(--amber); }
+  .pv .qb { color: var(--green); }
+  .pv .fl { color: var(--rose); font-weight: 600; }
+  .pv .rv { color: var(--muted); }
+  .pv td.rest, .pv td.off { background: var(--soft); color: var(--muted); }
+  .pv td.test { background: var(--accent-soft); color: var(--accent); font-weight: 700; }
+  .pv td.none { background: transparent; }
+  .pv .line { display: block; overflow-wrap: anywhere; }
+
+  @media (max-width: 1100px) { .cp { grid-template-columns: 1fr; } }
+  @media (max-width: 640px) { .derived { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+</style>
+</head>
+<body>
+<header class="nav">
+  <div class="wrap">
+    <span class="brand">PROJECT 520<small>Coach control panel</small></span>
+    <nav class="nav-links" aria-label="Coach tools">
+      <button class="btn btn-plain btn-sm" id="newBtn" type="button">New client</button>
+      <button class="btn btn-sm" id="openClient" type="button">Open client view</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="page-head">
+    <div>
+      <div class="tagline">Control panel</div>
+      <h1 id="title">Build a study plan</h1>
+      <p class="lede">Set the client's dates, resources and preferences. The preview updates as you go. Send the client link when it looks right; resending an updated link keeps their CARS and score logs.</p>
+    </div>
+  </div>
+
+  <div class="cp">
+    <div class="side">
+      <section class="panel stack">
+        <h2>Client</h2>
+        <div class="grid2">
+          <div class="field"><label for="name">Name</label><input id="name" type="text" autocomplete="off" placeholder="First name"></div>
+          <div class="field"><label for="target">Goal score</label><input id="target" type="number" min="472" max="528" placeholder="e.g. 515"></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label for="start">Prep start date</label><input id="start" type="date"></div>
+          <div class="field"><label for="test">Test date</label><input id="test" type="date"></div>
+        </div>
+      </section>
+
+      <section class="panel stack">
+        <h2>Content review</h2>
+        <div class="grid2">
+          <div class="field"><label for="resource">Primary resource</label>
+            <select id="resource"><option value="kaplan">Kaplan</option><option value="uworld">UWorld</option><option value="khanacademy">Khan Academy</option></select></div>
+          <div class="field"><label for="structure">Schedule structure</label>
+            <select id="structure"><option>Classic</option><option>Integrated</option><option>Hybrid</option></select></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label for="contentWeeks">Content review weeks</label><select id="contentWeeks"></select></div>
+          <div class="field"><label for="qbank">Question bank</label>
+            <select id="qbank"><option>UWorld</option><option>Kaplan</option><option>Blueprint</option><option>ExamKrackers</option><option>Princeton Review</option><option>Altius</option></select></div>
+        </div>
+        <div class="field"><span class="label">Study days</span><div class="chips" id="studyDays"></div></div>
+        <div class="field">
+          <label for="offDate">Scheduled off days</label>
+          <div class="inline"><input id="offDate" type="date"><button class="btn btn-plain" id="addOff" type="button">Add</button></div>
+          <div class="offs" id="offList"></div>
+        </div>
+      </section>
+
+      <section class="panel stack">
+        <h2>Question bank ramp</h2>
+        <p class="hint">Rows 1–4 spread across the content weeks; after that the ramp moves one row per week, up to row 8.</p>
+        <div class="table-scroll"><table class="data qt"><thead><tr><th>#</th><th>Qs / block</th><th>Blocks / day</th><th>Aligned</th><th class="r">Qs / week</th></tr></thead><tbody id="qtBody"></tbody></table></div>
+      </section>
+
+      <section class="panel stack">
+        <h2>CARS preference days</h2>
+        <div class="field"><span class="label">Phase 4 (3 days)</span><div class="chips" id="carsP4"></div><p class="warn" id="p4warn" hidden></p></div>
+        <div class="field"><span class="label">Phases 5–7 (2 days)</span><div class="chips" id="carsP57"></div><p class="warn" id="p57warn" hidden></p></div>
+        <p class="hint">Phases 1–3 put CARS on every study day.</p>
+      </section>
+
+      <section class="panel stack">
+        <h2>Client link</h2>
+        <div class="link-box" id="linkBox"></div>
+        <div class="inline" style="flex-wrap:wrap"><button class="btn" id="copyLink" type="button">Copy link</button><button class="btn btn-plain" id="openClient2" type="button">Open client view</button></div>
+        <div class="field"><label for="loadLink">Edit an existing client</label>
+          <div class="inline"><input id="loadLink" type="text" placeholder="Paste their client link"><button class="btn btn-plain" id="loadBtn" type="button">Load</button></div>
+          <p class="hint" id="loadMsg" role="status"></p></div>
+      </section>
+    </div>
+
+    <div class="stack" style="min-width:0">
+      <div class="derived" id="derived"></div>
+      <section class="panel" style="padding:16px">
+        <div class="row-between" style="margin-bottom:12px">
+          <h2 style="margin:0">Schedule preview</h2>
+          <div class="inline" style="align-items:center"><label class="label" for="pvPhase" style="white-space:nowrap">Preview CARS phase</label>
+            <select id="pvPhase" style="width:auto"></select></div>
+        </div>
+        <div class="pv-scroll"><table class="pv" id="pv"></table></div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<footer class="foot"><div class="wrap"><p style="margin:0">Plans are saved in this browser as you edit. The client link carries the whole plan, so nothing is stored on a server.</p><button class="theme-btn" id="themeBtn" type="button">Dark mode</button></div></footer>
+
+<script src="resources.js"></script>
+<script src="engine.js"></script>
+<script src="ui.js"></script>
+<script>
+(function () {
+  const P = window.P520, UI = window.P520UI;
+  P.initTheme(document.getElementById("themeBtn"));
+  const $ = id => document.getElementById(id);
+
+  let plan = P.normalizePlan(P.store.get(P.KEY_COACH, null) || {});
+
+  // Build static controls
+  $("contentWeeks").innerHTML = Array.from({ length: 11 }, (_, i) => i + 2).map(n => "<option>" + n + "</option>").join("");
+  $("pvPhase").innerHTML = P.CARS_PHASES.map(p => '<option value="' + p.n + '">' + p.n + ". " + P.esc(p.name) + "</option>").join("");
+  function chips(id, name) {
+    $(id).innerHTML = P.DOW3.map((d, i) => '<label class="chip"><input type="checkbox" id="' + name + i + '" data-i="' + i + '"><span>' + d + "</span></label>").join("");
+  }
+  chips("studyDays", "sd"); chips("carsP4", "p4"); chips("carsP57", "p57");
+
+  function fill() {
+    $("name").value = plan.name || "";
+    $("target").value = plan.target || "";
+    $("start").value = plan.start || "";
+    $("test").value = plan.test || "";
+    $("resource").value = plan.resource;
+    $("structure").value = plan.structure;
+    $("contentWeeks").value = String(plan.contentWeeks);
+    $("qbank").value = plan.qbank;
+    for (let i = 0; i < 7; i++) {
+      $("sd" + i).checked = !!plan.studyDays[i];
+      $("p4" + i).checked = !!plan.carsP4[i];
+      $("p57" + i).checked = !!plan.carsP57[i];
+    }
+    $("qtBody").innerHTML = plan.qtable.map((r, i) =>
+      "<tr><td class=\"num\">" + (i + 1) + '</td><td><input type="number" min="1" id="qq' + i + '" value="' + r.q + '" aria-label="Row ' + (i + 1) + ' questions per block"></td>' +
+      '<td><input type="number" min="1" id="qb' + i + '" value="' + r.b + '" aria-label="Row ' + (i + 1) + ' blocks per day"></td>' +
+      '<td><input type="checkbox" id="qa' + i + '"' + (r.aligned ? " checked" : "") + ' aria-label="Row ' + (i + 1) + ' content-aligned"></td>' +
+      '<td class="r" id="qw' + i + '"></td></tr>').join("");
+  }
+
+  function read() {
+    plan.name = $("name").value.trim();
+    plan.target = $("target").value ? +$("target").value : "";
+    plan.start = $("start").value;
+    plan.test = $("test").value;
+    plan.resource = $("resource").value;
+    plan.structure = $("structure").value;
+    plan.contentWeeks = +$("contentWeeks").value;
+    plan.qbank = $("qbank").value;
+    for (let i = 0; i < 7; i++) {
+      plan.studyDays[i] = $("sd" + i).checked;
+      plan.carsP4[i] = $("p4" + i).checked;
+      plan.carsP57[i] = $("p57" + i).checked;
+    }
+    plan.qtable = plan.qtable.map((r, i) => ({ q: Math.max(0, +$("qq" + i).value || 0), b: Math.max(0, +$("qb" + i).value || 0), aligned: $("qa" + i).checked }));
+  }
+
+  function link() { return new URL("calendar.html", location.href).href.split("#")[0] + P.planLinkSuffix(plan); }
+
+  function renderOffs() {
+    $("offList").innerHTML = plan.offDays.length
+      ? plan.offDays.map((d, i) => '<span class="off-tag num">' + P.longDate(P.dn(d)) + '<button type="button" data-i="' + i + '" aria-label="Remove ' + d + '">×</button></span>').join("")
+      : '<span class="hint">None</span>';
+  }
+
+  function update() {
+    read();
+    P.store.set(P.KEY_COACH, plan);
+    $("title").textContent = plan.name ? plan.name + "’s study plan" : "Build a study plan";
+    const sched = P.buildSchedule(plan, +$("pvPhase").value || 1);
+    const D = sched.D;
+    const dpw = D.daysPerWk;
+    plan.qtable.forEach((r, i) => $("qw" + i).textContent = (r.q * r.b * dpw).toLocaleString());
+
+    const n4 = plan.carsP4.filter(Boolean).length, n57 = plan.carsP57.filter(Boolean).length;
+    $("p4warn").hidden = n4 === 3; $("p4warn").textContent = n4 + " days picked. The phase is designed for 3.";
+    $("p57warn").hidden = n57 === 2; $("p57warn").textContent = n57 + " days picked. These phases are designed for 2.";
+
+    const valid = D.start != null && D.test != null && D.test > D.start && dpw > 0;
+    const perDay = sched.totals.contentDays ? (sched.totals.chapters / sched.totals.contentDays) : 0;
+    $("derived").innerHTML = valid ? [
+      [sched.weeks.length, "Total prep weeks"],
+      [plan.contentWeeks + " wks", "Content review"],
+      [sched.totals.chapters + " ch", D.res.label + ", " + perDay.toFixed(1) + " / study day"],
+      ["Week " + D.aamcStartWk, "CARS switches to AAMC"],
+      [sched.totals.fls, "Practice full lengths"],
+      [sched.totals.qs.toLocaleString(), "Total Qs scheduled"],
+      [dpw, "Study days / week"],
+      [Math.max(0, D.test - P.todayDn()), "Days until test"]
+    ].map(([b, s]) => '<div class="stat"><b>' + P.esc(b) + "</b><span>" + P.esc(s) + "</span></div>").join("") :
+      '<div class="empty-state" style="grid-column:1/-1">Pick a start date, a later test date, and at least one study day.</div>';
+
+    renderPreview(sched, valid);
+    $("linkBox").textContent = link();
+  }
+
+  function renderPreview(sched, valid) {
+    const t = $("pv");
+    if (!valid) { t.innerHTML = ""; return; }
+    let h = "<thead><tr><th>Week</th>" + P.DOW.map(d => "<th>" + d + "</th>").join("") + "</tr></thead><tbody>";
+    for (const w of sched.weeks) {
+      h += '<tr><td class="wk">' + w.num + "<span>" + (w.phase === "content" ? "Content" : "Practice") + "</span></td>";
+      for (const d of w.days) {
+        if (d.kind === "none") { h += '<td class="none"></td>'; continue; }
+        let c = '<div class="d">' + P.md(d.n) + "</div>";
+        if (d.kind === "test") c += "Test Day";
+        else if (d.kind === "off") c += "Off Day";
+        else if (d.kind === "rest") c += "Rest / Review";
+        else {
+          d.am.forEach(x => c += '<span class="line c">AM: ' + P.esc(x.label) + "</span>");
+          d.pm.forEach(x => c += '<span class="line c">PM: ' + P.esc(x.label) + "</span>");
+          if (d.cars) c += '<span class="line cars">CARS: ' + P.esc(d.cars.task) + " (" + P.esc(d.cars.source) + ")</span>";
+          const pr = d.practice;
+          if (pr.type === "fl") c += '<span class="line fl">Practice Full Length</span>';
+          else if (pr.type === "review") c += '<span class="line rv">Full Length Review</span>';
+          else c += '<span class="line qb">QBank: ' + P.esc(pr.text) + (pr.aligned ? " (aligned)" : " (mixed)") + "</span>";
+        }
+        h += '<td class="' + d.kind + '">' + c + "</td>";
+      }
+      h += "</tr>";
+    }
+    t.innerHTML = h + "</tbody>";
+  }
+
+  function openClient() {
+    P.store.set(P.KEY_PLAN, plan);
+    location.href = link();
+  }
+
+  fill(); renderOffs(); update();
+  document.querySelector(".cp").addEventListener("input", e => { if (e.target.id !== "loadLink" && e.target.id !== "offDate") update(); });
+  document.querySelector(".cp").addEventListener("change", e => { if (e.target.id !== "loadLink" && e.target.id !== "offDate") update(); });
+  $("addOff").addEventListener("click", () => {
+    const v = $("offDate").value;
+    if (!v || plan.offDays.includes(v)) return;
+    plan.offDays.push(v); plan.offDays.sort(); $("offDate").value = "";
+    renderOffs(); update();
+  });
+  $("offList").addEventListener("click", e => {
+    const b = e.target.closest("button[data-i]");
+    if (!b) return;
+    plan.offDays.splice(+b.dataset.i, 1); renderOffs(); update();
+  });
+  $("copyLink").addEventListener("click", () => P.copyText(link(), ok => UI.toast(ok ? "Client link copied" : "Couldn't copy. Select the link and copy it.")));
+  $("openClient").addEventListener("click", openClient);
+  $("openClient2").addEventListener("click", openClient);
+  $("newBtn").addEventListener("click", () => {
+    const keep = P.normalizePlan({});
+    keep.start = P.iso(P.todayDn());
+    keep.test = P.iso(P.todayDn() + 7 * 16);
+    plan = keep; fill(); renderOffs(); update();
+    $("name").focus();
+    UI.toast("New client started");
+  });
+  $("loadBtn").addEventListener("click", () => {
+    const m = /p=([^&\s]+)/.exec($("loadLink").value);
+    const p = m && P.decodePlan(m[1]);
+    if (!p) { $("loadMsg").textContent = "That doesn't look like a Project 520 client link."; return; }
+    plan = p; fill(); renderOffs(); update();
+    $("loadMsg").textContent = "Loaded " + (p.name || "the plan") + ". Changes keep the same client ID, so their logs carry over.";
+    $("loadLink").value = "";
+  });
+})();
+</script>
+</body>
+</html>
