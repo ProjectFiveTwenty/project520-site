@@ -234,6 +234,8 @@
           day.practice = { type: "qbank", blocks: +qrow.b || 0, q: +qrow.q || 0, aligned: !!qrow.aligned,
             text: (+qrow.b) + (+qrow.b === 1 ? " block of " : " blocks of ") + (+qrow.q) + " Qs" };
         }
+        // No CARS on full-length or full-length review days, in any phase.
+        if (day.practice.type !== "qbank") day.cars = null;
       }
       weeks.push({ num: w, days, phase: w <= cw ? "content" : "practice", anyInRange });
     }

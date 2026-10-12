@@ -219,8 +219,19 @@
     plan.qtable.forEach((r, i) => $("qw" + i).textContent = (r.q * r.b * dpw).toLocaleString());
 
     const n4 = plan.carsP4.filter(Boolean).length, n57 = plan.carsP57.filter(Boolean).length;
-    $("p4warn").hidden = n4 === 3; $("p4warn").textContent = n4 + " days picked. The phase is designed for 3.";
-    $("p57warn").hidden = n57 === 2; $("p57warn").textContent = n57 + " days picked. These phases are designed for 2.";
+    // Full lengths fall on the test-day weekday and the review on the day after; CARS is skipped on both.
+    const flCol = D.test != null ? P.wd(D.test) : -1, revCol = flCol === 6 ? 0 : flCol + 1;
+    function carsWarn(arr, need, label) {
+      const msgs = [];
+      const n = arr.filter(Boolean).length;
+      if (n !== need) msgs.push(n + " days picked. " + label + " " + need + ".");
+      const clash = [flCol, revCol].filter(c => c >= 0 && arr[c]).map(c => P.DOW[c]);
+      if (clash.length) msgs.push(clash.join(" and ") + " CARS is skipped in full-length weeks (" + P.DOW[flCol] + " is the full length, " + P.DOW[revCol] + " the review).");
+      return msgs.join(" ");
+    }
+    const w4 = carsWarn(plan.carsP4, 3, "The phase is designed for"), w57 = carsWarn(plan.carsP57, 2, "These phases are designed for");
+    $("p4warn").hidden = !w4; $("p4warn").textContent = w4;
+    $("p57warn").hidden = !w57; $("p57warn").textContent = w57;
 
     const valid = D.start != null && D.test != null && D.test > D.start && dpw > 0;
     const perDay = sched.totals.contentDays ? (sched.totals.chapters / sched.totals.contentDays) : 0;
