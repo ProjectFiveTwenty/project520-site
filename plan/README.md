@@ -1,6 +1,6 @@
 # Project 520 study plan pages
 
-Drop this folder into the `projectfivetwenty.github.io` repo as `plan/`. The pages are then served at:
+Drop this folder into the `projectfivetwenty.github.io` repo as `plan/`, and the `.github` folder from the zip into the top of the repo. The pages are then served at:
 
 - `https://projectfivetwenty.github.io/plan/coach.html` — your Control Panel (coach only)
 - `https://projectfivetwenty.github.io/plan/calendar.html` — client calendar (the client link opens this)
@@ -9,11 +9,15 @@ Drop this folder into the `projectfivetwenty.github.io` repo as `plan/`. The pag
 
 ## How it works
 
-- The Control Panel builds a client link. The whole plan rides in the link after `#p=`, so nothing is stored on a server.
-- When the client opens the link, the plan is saved in their browser. Their CARS and score logs are saved there too, under the plan's ID.
-- Resending an updated link (load their link in the Control Panel, edit, copy the new link) keeps the same ID, so their logs carry over.
+There are two modes, set by `sync-config.js`:
+
+- **Synced (after you follow [BACKEND-SETUP.md](BACKEND-SETUP.md)).** The plan and the client's progress live in Supabase. Client links end in `#c=<secret>`. Clients' check-offs, CARS logs and scores sync across their devices. You sign in to the Control Panel to see a client list, save plans to clients and run check-ins on live data.
+- **Browser only (if `sync-config.js` is empty).** The whole plan rides in the client link after `#p=`, and each client's logs are saved in their browser only. Clients can download a backup from the footer and send it to you.
+
+In both modes:
+
 - Logging CARS sessions moves the client through the 7 phases, and the calendar's CARS assignments follow the current phase, same as the sheet.
-- Clients can download a backup file from the footer of any page and send it to you. Restoring it in any browser (including yours) shows their calendar and logs.
+- The browser is always the first copy, so pages load instantly and work offline.
 
 ## Plan settings
 
@@ -26,22 +30,25 @@ Drop this folder into the `projectfivetwenty.github.io` repo as `plan/`. The pag
 ## Progress and re-planning
 
 - Clients check off chapters and practice blocks on the calendar. A status strip shows whether they're on track, ahead, or behind (and which chapters are missing).
-- Re-plans go through you. Ask the client for a backup file (footer of any page), then in the Control Panel use **Load client backup** under Check-in & re-plan.
+- Re-plans go through you. For a synced client, open them from the client list and press **Start check-in** under Check-in & re-plan. For a client on an old `#p=` link, ask for a backup file and use **Load client backup**.
 - You'll see chapters done, how far behind they are, their pace over the last two weeks, and the pace needed to finish on time.
 - Pick a start date for the re-plan and an option: absorb, extend content review, or move the test date. You can also drop chapters and write a note. The table compares the current plan with the re-plan.
-- **Save re-plan**, then copy the client link and send it. Their check-offs, CARS log and scores carry over. An old bookmarked link won't undo the re-plan.
+- **Save re-plan**. A synced client sees it the next time they open their plan. For a `#p=` client, copy the link and send it. Their check-offs, CARS log and scores carry over either way, and an old bookmarked link won't undo the re-plan.
 - Days before the re-plan date show what the client actually finished; the remaining chapters are spread evenly from the re-plan date on.
 
 ## Files
 
 - `engine.js` — the schedule logic (port of the Schedule tab formula), CARS phase rules, Anki search format, storage
+- `sync.js` — syncing with Supabase (client links, merging, coach sign-in); `sync-config.js` — the Supabase URL and public key
+- `supabase/setup.sql` — the database setup to paste into Supabase; `BACKEND-SETUP.md` — the setup steps
 - `resources.js` — Kaplan, UWorld and Khan Academy chapter lists with Classic / Integrated / Hybrid order
 - `anki-tags.js` — the Anki search for each chapter, per deck (AnKing, Captain Hook, MileDown)
 - `p520.css`, `ui.js` — shared styles and page chrome
 - `coach.html`, `calendar.html` (+ `calendar-view.js`), `cars.html`, `cars-guide.html` (the CARS training guide, linked from the tracker), `scores.html`, `index.html` (redirects to the calendar)
+- `../.github/workflows/keep-supabase-awake.yml` — pings the database every 3 days so the free project doesn't pause (goes at the top of the repo, not in `plan/`)
 
 To add or fix a chapter, edit `resources.js`. To add or fix an Anki search, edit `anki-tags.js`: find the chapter by its ID and comment (e.g. `"gc-5": { // General Chemistry Ch. 5: Chemical Kinetics`) and paste the search exactly as it appears in the sheet, inside the backticks. To add a deck for UWorld or Khan Academy, add a `captainhook:` or `miledown:` line to each chapter.
 
 After editing any file, change the `?v=` number in the five HTML files (for example `v=20261013a` to `v=20261013b`) so browsers load the new copy.
 
-`coach.html` is marked `noindex`, but anyone with the URL can open it. It holds no client data, only the form.
+`coach.html` is marked `noindex`, but anyone with the URL can open it. It shows no client data until you sign in, and the database only gives client data to your coach login.

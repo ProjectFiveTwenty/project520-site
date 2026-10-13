@@ -5,10 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Project 520 Control Panel</title>
 <meta name="robots" content="noindex">
+<meta name="p520-page" content="coach">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400&display=swap">
-<link rel="stylesheet" href="p520.css?v=20261013k">
+<link rel="stylesheet" href="p520.css?v=20261013s">
 <style>
   .cp { display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); gap: 20px; align-items: start; }
   .side { display: grid; gap: 16px; }
@@ -60,6 +61,20 @@
   textarea { resize: vertical; }
   .pv td.past { color: var(--muted); font-style: italic; }
   .pv td.cu { background: var(--green-soft); }
+  #dash { margin-bottom: 20px; }
+  .dash-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+  .dash-head h2 { margin: 0; }
+  .dash-tools { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 0.88rem; color: var(--muted); }
+  .dash-tools label { display: inline-flex; gap: 6px; align-items: center; }
+  table.clients td, table.clients th { white-space: nowrap; }
+  table.clients td.nm { white-space: normal; min-width: 120px; }
+  table.clients tr.cur td { background: var(--accent-soft); }
+  table.clients tr.arch td { color: var(--muted); }
+  table.clients td.bad { color: var(--rose); font-weight: 600; }
+  .signin { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 12px; align-items: end; max-width: 720px; }
+  .srv-state { font-size: 0.88rem; margin: 0; }
+  .srv-state.dirty { color: var(--rose); font-weight: 600; }
+  @media (max-width: 640px) { .signin { grid-template-columns: 1fr; } }
   @media (max-width: 1100px) { .cp { grid-template-columns: 1fr; } }
   @media (max-width: 640px) { .ci-status { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   @media (max-width: 640px) { .derived { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
@@ -84,6 +99,8 @@
       <p class="lede">Set the client's dates, resources and preferences. The preview updates as you go. Send the client link when it looks right; resending an updated link keeps their CARS and score logs.</p>
     </div>
   </div>
+
+  <section class="panel" id="dash" hidden></section>
 
   <div class="cp">
     <div class="side">
@@ -158,18 +175,26 @@
 
       <section class="panel stack">
         <h2>Client link</h2>
+        <p class="srv-state" id="srvState" role="status" hidden></p>
         <div class="link-box" id="linkBox"></div>
-        <div class="inline" style="flex-wrap:wrap"><button class="btn" id="copyLink" type="button">Copy link</button><button class="btn btn-plain" id="openClient2" type="button">Open client view</button></div>
+        <div class="inline" style="flex-wrap:wrap">
+          <button class="btn" id="createSrv" type="button" hidden>Create client</button>
+          <button class="btn" id="saveSrv" type="button" hidden>Save changes to client</button>
+          <button class="btn" id="copyLink" type="button">Copy link</button>
+          <button class="btn btn-plain" id="openClient2" type="button">Open client view</button>
+        </div>
         <div class="field"><label for="loadLink">Edit an existing client</label>
           <div class="inline"><input id="loadLink" type="text" placeholder="Paste their client link"><button class="btn btn-plain" id="loadBtn" type="button">Load</button></div>
           <p class="hint" id="loadMsg" role="status"></p></div>
+        <div id="archiveRow" hidden><button class="btn btn-plain btn-sm" id="archiveBtn" type="button">Archive client</button>
+          <p class="hint" style="margin-top:6px">Archived clients are hidden from your list. Their link keeps working.</p></div>
       </section>
     </div>
 
     <div class="stack" style="min-width:0">
       <section class="panel stack" id="ciPanel">
         <div class="row-between"><h2 style="margin:0">Check-in &amp; re-plan</h2>
-          <div class="inline"><label class="btn btn-plain btn-sm" for="backupFile">Load client backup</label><input id="backupFile" type="file" accept="application/json,.json" hidden></div></div>
+          <div class="inline"><button class="btn btn-sm" id="liveCi" type="button" hidden>Start check-in</button><label class="btn btn-plain btn-sm" for="backupFile">Load client backup</label><input id="backupFile" type="file" accept="application/json,.json" hidden></div></div>
         <p class="hint" id="ciIntro">Load the backup file your client downloads from the bottom of their calendar. You'll see where they stand and can re-plan the rest of their schedule from a date you pick.</p>
         <div id="ciBody" class="stack" hidden>
           <div id="ciStatus" class="ci-status"></div>
@@ -205,12 +230,14 @@
   </div>
 </main>
 
-<footer class="foot"><div class="wrap"><p style="margin:0">Plans are saved in this browser as you edit. The client link carries the whole plan, so nothing is stored on a server.</p><button class="theme-btn" id="themeBtn" type="button">Dark mode</button></div></footer>
+<footer class="foot"><div class="wrap"><p style="margin:0" id="footNote">Plans are saved in this browser as you edit. The client link carries the whole plan, so nothing is stored on a server.</p><button class="theme-btn" id="themeBtn" type="button">Dark mode</button></div></footer>
 
-<script src="anki-tags.js?v=20261013k"></script>
-<script src="resources.js?v=20261013k"></script>
-<script src="engine.js?v=20261013k"></script>
-<script src="ui.js?v=20261013k"></script>
+<script src="anki-tags.js?v=20261013s"></script>
+<script src="resources.js?v=20261013s"></script>
+<script src="engine.js?v=20261013s"></script>
+<script src="sync-config.js?v=20261013s"></script>
+<script src="sync.js?v=20261013s"></script>
+<script src="ui.js?v=20261013s"></script>
 <script>
 (function () {
   const P = window.P520, UI = window.P520UI;
@@ -218,6 +245,10 @@
   const $ = id => document.getElementById(id);
 
   let plan = P.normalizePlan(P.store.get(P.KEY_COACH, null) || {});
+  const S = window.P520Sync;
+  const online = !!(S && S.enabled);
+  const KEY_CUR = "p520.coachCurrent";
+  let current = online ? P.store.get(KEY_CUR, null) : null; // the client-list entry being edited: { id, token, archived, saved }
 
   // Build static controls
   $("contentWeeks").innerHTML = Array.from({ length: 15 }, (_, i) => i + 2).map(n => "<option>" + n + "</option>").join("");
@@ -306,7 +337,9 @@
     $("catchUp").innerHTML = '<option value="-1">None</option>' + P.DOW.map((d, i) => plan.studyDays[i] ? '<option value="' + i + '">' + d + "</option>" : "").join("");
     $("catchUp").value = plan.studyDays[cur] ? String(cur) : "-1";
   }
-  function link() { return new URL("calendar.html", location.href).href.split("#")[0] + P.planLinkSuffix(plan); }
+  // Signed in: the client's sync link (#c=token). Otherwise the plan rides in the link (#p=...).
+  function previewLink() { return new URL("calendar.html", location.href).href.split("#")[0] + P.planLinkSuffix(plan); }
+  function link() { return signedIn() ? (onServer() ? S.clientLink(current.token) : "") : previewLink(); }
 
   function renderOffs() {
     $("offList").innerHTML = plan.offDays.length
@@ -365,7 +398,7 @@
       '<div class="empty-state" style="grid-column:1/-1">Pick a start date, a later test date, and at least one study day.</div>';
 
     renderPreview(sched, valid);
-    $("linkBox").textContent = link();
+    renderServer();
     if (ci) renderCheckin(sched);
   }
 
@@ -429,7 +462,7 @@
       '<div class="stat"><b>' + (st.behind ? st.behind + " behind" : st.ahead ? st.ahead + " ahead" : "On track") + "</b><span>Against current plan</span></div>" +
       '<div class="stat"><b>' + (st.pace == null ? "–" : st.pace.toFixed(1)) + "</b><span>Chapters / study day, last 2 wks</span></div>" +
       '<div class="stat"><b>' + (need == null ? "–" : need.toFixed(1)) + "</b><span>Needed / day to finish on time</span></div>" +
-      '<div class="ci-missing">' + P.esc(base.name || "Client") + "’s backup from " + (ci.exported ? P.shortDate(P.dn(ci.exported)) : "an unknown date") +
+      '<div class="ci-missing">' + P.esc(base.name || "Client") + (ci.live ? "’s progress as of " + (ci.exported ? P.shortDate(P.dn(ci.exported)) : "now") : "’s backup from " + (ci.exported ? P.shortDate(P.dn(ci.exported)) : "an unknown date")) +
       (st.missing.length ? ". Not done yet: " + st.missing.slice(0, 6).map(m => P.esc(m.chapter.subject + " Ch. " + m.chapter.ch)).join(", ") + (st.missing.length > 6 ? ", and " + (st.missing.length - 6) + " more" : "") : "") + ".</div>";
     const endOf = (s, p) => P.shortDate(Math.min(s.weeks.length ? s.D.week1Sun + p.contentWeeks * 7 - 1 : 0, s.D.test - 1));
     const remA = after.totals.remaining;
@@ -446,7 +479,7 @@
     $("dropCount").textContent = ci.dropped.size ? "(" + ci.dropped.size + " selected)" : "";
     $("applyRp").disabled = !aL.days && remA > 0;
     if ($("applyRp").disabled) $("rpMsg").textContent = "The remaining chapters don't fit: content review ends before the re-plan date. Extend content review or move the test date.";
-    else if (!ci.saved) $("rpMsg").textContent = "Not saved yet. The client link below updates after you save.";
+    else if (!ci.saved) $("rpMsg").textContent = onServer() ? "Not saved yet. The client sees the re-plan after you save." : "Not saved yet. The client link below updates after you save.";
   }
   function renderDropList() {
     const done = new Set(Object.keys(ci.progress.ch));
@@ -456,6 +489,18 @@
     $("dropList").innerHTML = Object.keys(bySubj).map(sj => '<div class="grp">' + P.esc(sj) + "</div>" +
       bySubj[sj].sort((a, b) => a.ch - b.ch).map(c => '<label><input type="checkbox" data-drop="' + c.id + '"' + (ci.dropped.has(c.id) ? " checked" : "") + "><span>Ch. " + c.ch + ": " + P.esc(c.topic) + " <span class=\"hint\">(" + c.tier + ")</span></span></label>").join("")).join("");
   }
+  function startCheckin(planObj, progressObj, asOf, live) {
+    const base = P.normalizePlan(planObj);
+    ci = { progress: P.normProgress(progressObj), base, exported: asOf, live, dropped: new Set(base.dropped || []), saved: false };
+    plan = P.normalizePlan(JSON.parse(JSON.stringify(base)));
+    fill(); renderOffs();
+    $("rpDate").value = P.iso(Math.max(P.todayDn(), P.dn(base.start)));
+    $("rpNote").value = "";
+    renderDropList();
+    $("ciBody").hidden = false; $("ciIntro").hidden = true;
+    document.querySelectorAll(".presets .btn").forEach(b => b.classList.toggle("on", b.dataset.preset === "absorb"));
+    update();
+  }
   $("backupFile").addEventListener("change", e => {
     const f = e.target.files[0];
     if (!f) return;
@@ -464,17 +509,8 @@
       try {
         const obj = JSON.parse(r.result);
         if (!obj || obj.app !== "project520" || !obj.plan) throw new Error("That file isn't a Project 520 backup.");
-        const base = P.normalizePlan(obj.plan);
-        ci = { progress: P.normProgress(obj.progress), base, exported: obj.exportedDay || (obj.exported || "").slice(0, 10), dropped: new Set(base.dropped || []), saved: false };
-        plan = P.normalizePlan(JSON.parse(JSON.stringify(base)));
-        fill(); renderOffs();
-        $("rpDate").value = P.iso(Math.max(P.todayDn(), P.dn(base.start)));
-        $("rpNote").value = "";
-        renderDropList();
-        $("ciBody").hidden = false; $("ciIntro").hidden = true;
-        document.querySelectorAll(".presets .btn").forEach(b => b.classList.toggle("on", b.dataset.preset === "absorb"));
-        update();
-        UI.toast("Loaded " + (base.name || "client") + "’s backup");
+        startCheckin(obj.plan, obj.progress, obj.exportedDay || (obj.exported || "").slice(0, 10), false);
+        UI.toast("Loaded " + (plan.name || "client") + "’s backup");
       } catch (err) { UI.toast(err.message || "That file couldn't be read."); }
       e.target.value = "";
     };
@@ -513,16 +549,254 @@
     ci.base = P.normalizePlan(JSON.parse(JSON.stringify(plan)));
     ci.saved = true;
     update();
-    $("rpMsg").textContent = "Re-plan saved. Copy the client link and send it; their logs and check-offs carry over.";
+    if (onServer()) {
+      $("rpMsg").textContent = "Saving…";
+      saveToServer().then(ok => {
+        $("rpMsg").textContent = ok ? "Re-plan saved and sent. Their calendar updates the next time they open it." : "Re-plan saved here, but it didn't reach the client. Press Save changes to client to try again.";
+      });
+      return;
+    }
+    $("rpMsg").textContent = signedIn() ? "Re-plan saved. Press Create client to save it to your client list and get their link." : "Re-plan saved. Copy the client link and send it; their logs and check-offs carry over.";
     UI.toast("Re-plan saved");
   });
-  $("closeCi").addEventListener("click", () => {
-    ci = null; $("ciBody").hidden = true; $("ciIntro").hidden = false; update();
-  });
+  function closeCheckin() { ci = null; $("ciBody").hidden = true; $("ciIntro").hidden = false; }
+  $("closeCi").addEventListener("click", () => { closeCheckin(); update(); });
 
+  // Preview on this device only: the #p= link never syncs, so check-offs here don't reach the client.
   function openClient() {
     P.store.set(P.KEY_PLAN, plan);
-    location.href = link();
+    location.href = previewLink();
+  }
+
+  /* ---------- Syncing: sign-in, client list, saving plans to clients ---------- */
+  let clients = null, showArchived = false, dashError = "";
+  const FOOT_LOCAL = $("footNote").textContent;
+  const LEDE_LOCAL = document.querySelector(".lede").textContent;
+  const CI_LOCAL = $("ciIntro").textContent;
+  function signedIn() { return online && !!S.auth.session(); }
+  const strip = p => { const c = JSON.parse(JSON.stringify(p)); delete c.rev; return JSON.stringify(c); };
+  function onServer() { return !!(signedIn() && current && current.id === plan.id); }
+  function dirty() { return onServer() && strip(plan) !== current.saved; }
+  function setCurrent(row) {
+    current = row ? { id: row.id, token: row.token, archived: !!row.archived, saved: strip(plan) } : null;
+    if (online) P.store.set(KEY_CUR, current);
+  }
+  function errText(e) {
+    if (e.offline) return "Can't reach the server. Check your internet connection.";
+    if (e.status === 401 || /jwt|token/i.test(e.message)) return "Your sign-in expired. Sign in again.";
+    return e.message || "Something went wrong.";
+  }
+  function authFailed(e) {
+    if (e.status === 401 || (!e.offline && !S.auth.session())) { clients = null; renderDash(); renderServer(); return true; }
+    return false;
+  }
+
+  function renderServer() {
+    const si = signedIn(), on = onServer(), d = dirty();
+    $("createSrv").hidden = !si || on;
+    $("saveSrv").hidden = !on;
+    $("saveSrv").disabled = !d;
+    $("archiveRow").hidden = !on;
+    $("liveCi").hidden = !on;
+    $("copyLink").disabled = si && !on;
+    const st = $("srvState");
+    st.hidden = !si;
+    st.className = "srv-state" + (d ? " dirty" : "");
+    st.textContent = !si ? "" : !on ? "This plan isn't in your client list yet. Create the client to get their link." :
+      d ? "Unsaved changes. The client sees the last saved version." : "Saved. This is the plan your client sees.";
+    $("ciIntro").textContent = on ? "Press Start check-in to load their latest progress. You'll see where they stand and can re-plan the rest of their schedule from a date you pick." : CI_LOCAL;
+    $("archiveBtn").textContent = current && current.archived ? "Unarchive client" : "Archive client";
+    $("linkBox").textContent = link() || "The link appears here after you create the client.";
+    $("footNote").textContent = si ? "Plans are saved in this browser as you edit. Clients see changes after you press Save changes to client." :
+      online ? "Sign in at the top of the page to save plans to clients and see their progress." : FOOT_LOCAL;
+    document.querySelector(".lede").textContent = si ? "Set the client's dates, resources and preferences. The preview updates as you go. Create the client to get their link; after that, Save changes to client updates their calendar." : LEDE_LOCAL;
+    document.querySelectorAll("#dash tr[data-id]").forEach(tr => tr.classList.toggle("cur", tr.dataset.id === plan.id && on));
+  }
+
+  function ago(ts) {
+    if (!ts) return { text: "Never", stale: true };
+    const t = new Date(ts);
+    const n = P.todayDn() - P.dn(t.getFullYear() + "-" + String(t.getMonth() + 1).padStart(2, "0") + "-" + String(t.getDate()).padStart(2, "0"));
+    return { text: n <= 0 ? "Today" : n === 1 ? "Yesterday" : n + " days ago", stale: n >= 5 };
+  }
+  function summarize(c) {
+    const pl = P.normalizePlan(c.plan), d = c.data || {}, cars = d.cars || [], fl = d.fl || [];
+    const today = P.todayDn(), start = P.dn(pl.start), test = P.dn(pl.test);
+    let st = null;
+    try { st = P.status(pl, P.buildSchedule(pl, P.carsPhaseByDay(cars, today)), d.progress, today); } catch (e) {}
+    const S4 = P.FL_SECTIONS;
+    const full = fl.filter(r => r.scaled && S4.every(s => r.scaled[s.key])).sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+    const latest = full.length ? S4.reduce((a, s) => a + (+full[full.length - 1].scaled[s.key] || 0), 0) : null;
+    let pill;
+    if (start != null && today < start) pill = '<span class="pill locked">Starts ' + P.shortDate(start) + "</span>";
+    else if (test != null && today > test) pill = '<span class="pill locked">Test taken</span>';
+    else if (!st) pill = "–";
+    else if (st.behind) pill = '<span class="pill miss">' + st.behind + " behind</span>";
+    else pill = '<span class="pill done">' + (st.ahead ? st.ahead + " ahead" : "On track") + "</span>";
+    return { pl, pill, phase: P.carsProgress(cars).active, latest, target: +pl.target || null, test, done: st ? st.doneCount + "/" + st.total : "" };
+  }
+  function renderDash() {
+    const el = $("dash");
+    if (!online) { el.hidden = true; return; }
+    el.hidden = false;
+    if (!signedIn()) {
+      el.innerHTML = '<div class="dash-head"><h2>Clients</h2></div>' +
+        '<p class="hint" style="margin:0 0 12px">Sign in to see your clients and save plans to them.</p>' +
+        '<form class="signin" id="signinForm" novalidate><div class="field"><label for="siEmail">Email</label><input id="siEmail" type="email" autocomplete="username"></div>' +
+        '<div class="field"><label for="siPass">Password</label><input id="siPass" type="password" autocomplete="current-password"></div>' +
+        '<div><button class="btn" type="submit">Sign in</button></div></form>' +
+        '<p class="hint" id="siMsg" role="status" style="margin:8px 0 0">' + P.esc(dashError) + "</p>";
+      return;
+    }
+    const sess = S.auth.session();
+    const head = '<div class="dash-head"><h2>Clients</h2><div class="dash-tools">' +
+      '<label><input type="checkbox" id="showArch"' + (showArchived ? " checked" : "") + "> Show archived</label>" +
+      '<button class="btn btn-plain btn-sm" id="refreshDash" type="button">Refresh</button>' +
+      "<span>" + P.esc(sess.email || "") + '</span><button class="btn btn-plain btn-sm" id="signOut" type="button">Sign out</button></div></div>';
+    if (clients == null) { el.innerHTML = head + '<p class="hint" style="margin:0">' + (dashError ? P.esc(dashError) : "Loading clients…") + "</p>"; return; }
+    const rows = clients.filter(c => showArchived || !c.archived);
+    if (!rows.length) {
+      el.innerHTML = head + '<p class="hint" style="margin:0">' + (clients.length ? "All your clients are archived." : "No clients yet. Build a plan below, then press Create client under Client link.") + "</p>";
+      return;
+    }
+    el.innerHTML = head + '<div class="table-scroll"><table class="data clients"><thead><tr><th>Client</th><th>Tier</th><th>Test day</th><th>Chapters</th><th>Status</th><th>CARS</th><th class="r">Latest FL</th><th>Last opened</th><th></th></tr></thead><tbody>' +
+      rows.map(c => {
+        const x = summarize(c), seen = ago(c.seen_at);
+        const fl = x.latest == null ? "–" : x.latest + (x.target ? ' <span class="hint">/ ' + x.target + "</span>" : "");
+        const days = x.test != null ? x.test - P.todayDn() : null;
+        return '<tr data-id="' + P.esc(c.id) + '"' + (c.archived ? ' class="arch"' : "") + '><td class="nm"><b>' + P.esc(c.name || x.pl.name || "Unnamed") + "</b>" + (c.archived ? ' <span class="hint">(archived)</span>' : "") + "</td>" +
+          "<td>" + (x.pl.tier === "core" ? "Core" : "Coaching") + "</td>" +
+          '<td class="num">' + (x.test != null ? P.shortDate(x.test) + (days >= 0 ? ' <span class="hint">(' + days + "d)</span>" : "") : "–") + "</td>" +
+          '<td class="num">' + x.done + "</td><td>" + x.pill + "</td><td>Phase " + x.phase + "</td>" +
+          '<td class="r num">' + fl + "</td>" +
+          "<td" + (seen.stale && !c.archived ? ' class="bad"' : "") + ">" + seen.text + "</td>" +
+          '<td><button class="btn btn-plain btn-sm" type="button" data-open="' + P.esc(c.id) + '">Open</button></td></tr>';
+      }).join("") + "</tbody></table></div>";
+    renderServer();
+  }
+  async function loadClients() {
+    if (!signedIn()) return;
+    dashError = "";
+    try {
+      clients = await S.rest("GET", "/clients?select=*&order=created_at.desc");
+      // Keep the open client's saved state in step with the server.
+      if (current) { const row = clients.find(c => c.id === current.id); if (!row) setCurrent(null); else if (current.archived !== !!row.archived || current.token !== row.token) { current.archived = !!row.archived; current.token = row.token; P.store.set(KEY_CUR, current); } }
+    } catch (e) {
+      if (authFailed(e)) { dashError = errText(e); renderDash(); return; }
+      dashError = errText(e);
+    }
+    renderDash(); renderServer();
+  }
+
+  function openRow(row) {
+    if (dirty() && !confirm("You have unsaved changes for " + (plan.name || "this client") + ". Open another client and lose them?")) return;
+    plan = P.normalizePlan(row.plan);
+    closeCheckin();
+    fill(); renderOffs();
+    current = { id: row.id, token: row.token, archived: !!row.archived, saved: "" };
+    update();               // reads the form back into the plan, so compare against that
+    setCurrent(row);
+    renderServer();
+    window.scrollTo({ top: document.querySelector(".cp").getBoundingClientRect().top + window.scrollY - 80 });
+    UI.toast("Opened " + (plan.name || "client"));
+  }
+
+  async function createClient() {
+    update();
+    if (!plan.name) { UI.toast("Add the client's name first"); $("name").focus(); return; }
+    $("createSrv").disabled = true;
+    try {
+      const rows = await S.rest("POST", "/clients", { id: plan.id, name: plan.name, tier: plan.tier, plan, plan_rev: plan.rev || Date.now() }, "return=representation");
+      setCurrent(rows[0]);
+      UI.toast("Client created. Copy their link and send it.");
+      await loadClients();
+    } catch (e) {
+      if (authFailed(e)) { UI.toast(errText(e)); return; }
+      if (e.status === 409) {
+        // This plan's ID is already in the list (created earlier): attach to it.
+        const rows = await S.rest("GET", "/clients?select=*&id=eq." + encodeURIComponent(plan.id)).catch(() => []);
+        if (rows && rows[0]) { current = { id: rows[0].id, token: rows[0].token, archived: !!rows[0].archived, saved: strip(P.normalizePlan(rows[0].plan)) }; P.store.set(KEY_CUR, current); renderServer(); UI.toast("This plan is already in your client list. Press Save changes to update it."); return; }
+        // Same ID but not visible: give this plan a fresh ID and try again.
+        plan.id = P.makeId(); P.store.set(P.KEY_COACH, plan); $("createSrv").disabled = false; return createClient();
+      }
+      UI.toast(errText(e));
+    } finally { $("createSrv").disabled = false; renderServer(); }
+  }
+
+  async function saveToServer() {
+    if (!onServer()) return false;
+    update();
+    $("saveSrv").disabled = true;
+    try {
+      const rows = await S.rest("PATCH", "/clients?id=eq." + encodeURIComponent(plan.id), { plan, plan_rev: plan.rev || Date.now(), name: plan.name, tier: plan.tier }, "return=representation");
+      if (!rows || !rows.length) throw new Error("This client isn't in your list anymore.");
+      current.saved = strip(plan); P.store.set(KEY_CUR, current);
+      UI.toast("Saved. " + (plan.name || "The client") + " sees the update next time they open their plan.");
+      loadClients();
+      return true;
+    } catch (e) {
+      authFailed(e);
+      UI.toast(errText(e));
+      return false;
+    } finally { renderServer(); }
+  }
+
+  async function liveCheckin() {
+    if (!onServer()) return;
+    if (dirty() && !confirm("Starting a check-in reloads the client's saved plan, and your unsaved changes will be lost. Continue?")) return;
+    try {
+      const rows = await S.rest("GET", "/clients?select=*&id=eq." + encodeURIComponent(plan.id));
+      const row = rows && rows[0];
+      if (!row) { UI.toast("This client isn't in your list anymore."); return; }
+      startCheckin(row.plan, (row.data || {}).progress, P.iso(P.todayDn()), true);
+      current.saved = strip(plan); P.store.set(KEY_CUR, current); renderServer();
+      $("ciPanel").scrollIntoView({ block: "start" });
+      UI.toast("Loaded " + (plan.name || "client") + "’s progress");
+    } catch (e) { authFailed(e); UI.toast(errText(e)); }
+  }
+
+  async function toggleArchive() {
+    if (!onServer()) return;
+    const next = !current.archived;
+    try {
+      await S.rest("PATCH", "/clients?id=eq." + encodeURIComponent(plan.id), { archived: next }, "return=minimal");
+      current.archived = next; P.store.set(KEY_CUR, current);
+      UI.toast(next ? "Archived" : "Unarchived");
+      loadClients();
+    } catch (e) { authFailed(e); UI.toast(errText(e)); }
+  }
+
+  if (online) {
+    $("dash").addEventListener("submit", async e => {
+      if (e.target.id !== "signinForm") return;
+      e.preventDefault();
+      const email = $("siEmail").value.trim(), pass = $("siPass").value;
+      if (!email || !pass) { $("siMsg").textContent = "Enter your email and password."; return; }
+      $("siMsg").textContent = "Signing in…";
+      try {
+        await S.auth.signIn(email, pass);
+        dashError = ""; clients = null; renderDash(); renderServer(); loadClients();
+      } catch (err) {
+        $("siMsg").textContent = err.offline ? "Can't reach the server. Check your internet connection." : (err.status === 400 ? "That email and password don't match." : err.message);
+      }
+    });
+    $("dash").addEventListener("click", e => {
+      const t = e.target;
+      if (t.id === "signOut") { S.auth.signOut(); clients = null; renderDash(); renderServer(); return; }
+      if (t.id === "refreshDash") { clients = null; renderDash(); loadClients(); return; }
+      const open = t.closest("[data-open]");
+      if (open) { const row = (clients || []).find(c => c.id === open.dataset.open); if (row) openRow(row); }
+    });
+    $("dash").addEventListener("change", e => { if (e.target.id === "showArch") { showArchived = e.target.checked; renderDash(); } });
+    $("createSrv").addEventListener("click", createClient);
+    $("saveSrv").addEventListener("click", saveToServer);
+    $("liveCi").addEventListener("click", liveCheckin);
+    $("archiveBtn").addEventListener("click", toggleArchive);
+    addEventListener("beforeunload", e => { if (dirty()) { e.preventDefault(); e.returnValue = ""; } });
+    // Re-check the client list when coming back to this tab.
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && signedIn()) loadClients(); });
+    renderDash();
+    loadClients();
   }
 
   fill(); renderOffs(); update();
@@ -545,23 +819,36 @@
     if (!b) return;
     plan.offDays.splice(+b.dataset.i, 1); renderOffs(); update();
   });
-  $("copyLink").addEventListener("click", () => P.copyText(link(), ok => UI.toast(ok ? "Client link copied" : "Couldn't copy. Select the link and copy it.")));
+  $("copyLink").addEventListener("click", () => {
+    if (!link()) return;
+    if (dirty()) UI.toast("Save changes first so the client sees them");
+    P.copyText(link(), ok => { if (!dirty()) UI.toast(ok ? "Client link copied" : "Couldn't copy. Select the link and copy it."); });
+  });
   $("openClient").addEventListener("click", openClient);
   $("openClient2").addEventListener("click", openClient);
   $("newBtn").addEventListener("click", () => {
     const keep = P.normalizePlan({});
     keep.start = P.iso(P.todayDn());
     keep.test = P.iso(P.todayDn() + 7 * 16);
-    plan = keep; fill(); renderOffs(); update();
+    plan = keep; setCurrent(null); closeCheckin(); fill(); renderOffs(); update();
     $("name").focus();
     UI.toast("New client started");
   });
   $("loadBtn").addEventListener("click", () => {
+    const tok = (/[#&]c=([A-Za-z0-9_-]+)/.exec($("loadLink").value) || [])[1];
+    if (tok) {
+      if (!signedIn()) { $("loadMsg").textContent = "Sign in at the top of the page to open this client."; return; }
+      S.rest("GET", "/clients?select=*&token=eq." + encodeURIComponent(tok)).then(rows => {
+        if (!rows || !rows.length) { $("loadMsg").textContent = "No client in your list has that link."; return; }
+        openRow(rows[0]); $("loadMsg").textContent = ""; $("loadLink").value = "";
+      }).catch(e => { $("loadMsg").textContent = errText(e); });
+      return;
+    }
     const m = /p=([^&\s]+)/.exec($("loadLink").value);
     const p = m && P.decodePlan(m[1]);
     if (!p) { $("loadMsg").textContent = "That doesn't look like a Project 520 client link."; return; }
-    plan = p; fill(); renderOffs(); update();
-    $("loadMsg").textContent = "Loaded " + (p.name || "the plan") + ". Changes keep the same client ID, so their logs carry over.";
+    plan = p; if (current && current.id !== p.id) setCurrent(null); fill(); renderOffs(); update();
+    $("loadMsg").textContent = "Loaded " + (p.name || "the plan") + ". Changes keep the same client ID, so their logs carry over." + (signedIn() && !onServer() ? " Press Create client to move them to syncing." : "");
     $("loadLink").value = "";
   });
 })();

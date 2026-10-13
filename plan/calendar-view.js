@@ -304,6 +304,7 @@
   weeksEl.addEventListener("change", e => {
     const box = e.target;
     if (box.type !== "checkbox") return;
+    progress = P.loadProgress(plan.id);  // fresh copy, in case another device's changes synced in
     if (box.dataset.ch) {
       if (box.checked) progress.ch[box.dataset.ch] = P.iso(today); else delete progress.ch[box.dataset.ch];
       // keep duplicate checkboxes for the same chapter in sync

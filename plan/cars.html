@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400&display=swap">
-<link rel="stylesheet" href="p520.css?v=20261013k">
+<link rel="stylesheet" href="p520.css?v=20261013s">
 <style>
   .layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr); gap: 20px; align-items: start; }
   .ladder { list-style: none; margin: 0; padding: 0; display: grid; }
@@ -54,10 +54,12 @@
   <div id="content"></div>
 </main>
 
-<script src="anki-tags.js?v=20261013k"></script>
-<script src="resources.js?v=20261013k"></script>
-<script src="engine.js?v=20261013k"></script>
-<script src="ui.js?v=20261013k"></script>
+<script src="anki-tags.js?v=20261013s"></script>
+<script src="resources.js?v=20261013s"></script>
+<script src="engine.js?v=20261013s"></script>
+<script src="sync-config.js?v=20261013s"></script>
+<script src="sync.js?v=20261013s"></script>
+<script src="ui.js?v=20261013s"></script>
 <script>
 (function () {
   const P = window.P520, UI = window.P520UI;
@@ -119,7 +121,7 @@
       return "<tr><td class=\"num\">" + P.esc(r.date) + "</td><td>" + P.esc(r.source) + "</td><td>" + r.phase + ". " + P.esc(P.CARS_PHASES[r.phase - 1].name) + "</td>" +
         '<td class="r">' + r.passages + '</td><td class="r">' + per + '</td><td class="r">' + acc + "</td>" +
         "<td>" + (ok ? '<span class="ok">✓ Met</span>' : '<span class="bad">✗ Not met</span>') + "</td>" +
-        '<td><button class="del" type="button" data-i="' + i + '" aria-label="Delete entry from ' + P.esc(r.date) + '">Delete</button></td></tr>';
+        '<td><button class="del" type="button" ' + (r.id ? 'data-id="' + P.esc(r.id) + '"' : 'data-i="' + i + '"') + ' aria-label="Delete entry from ' + P.esc(r.date) + '">Delete</button></td></tr>';
     }).join("");
     $("logEmpty").hidden = log.length > 0;
     $("logCount").textContent = log.length ? log.length + (log.length === 1 ? " session" : " sessions") : "";
@@ -128,12 +130,13 @@
   $("logForm").addEventListener("submit", e => {
     e.preventDefault();
     const r = {
-      date: $("fDate").value, source: $("fSource").value, phase: +$("fPhase").value,
+      id: P.makeId(), date: $("fDate").value, source: $("fSource").value, phase: +$("fPhase").value,
       passages: +$("fPass").value, minutes: +$("fMin").value, questions: +$("fQ").value, correct: +$("fC").value
     };
     const msg = $("formMsg");
     if (!r.date || !r.passages || !r.questions || $("fMin").value === "" || $("fC").value === "") { msg.textContent = "Fill in every field before adding the session."; return; }
     if (r.correct > r.questions) { msg.textContent = "Correct can't be more than the number of questions."; return; }
+    log = P.store.get(KEY, []);  // fresh copy, in case another device's changes synced in
     const before = P.carsProgress(log).active;
     log.push(r);
     P.store.set(KEY, log);
@@ -146,7 +149,9 @@
   $("logBody").addEventListener("click", e => {
     const b = e.target.closest(".del");
     if (!b) return;
-    log.splice(+b.dataset.i, 1);
+    log = P.store.get(KEY, []);
+    const at = b.dataset.id ? log.findIndex(x => x.id === b.dataset.id) : +b.dataset.i;
+    if (at >= 0) log.splice(at, 1);
     P.store.set(KEY, log);
     render();
     UI.toast("Entry deleted");
