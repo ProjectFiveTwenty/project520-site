@@ -7,10 +7,10 @@
   --muted: #5a6573;
   --line: #e2e6eb;
   --soft: #f4f6f8;
-  --accent: #2354d4;
-  --accent-hover: #1b44b0;
+  --accent: #1f3561;
+  --accent-hover: #162746;
   --accent-ink: #ffffff;
-  --accent-soft: #eaf0fd;
+  --accent-soft: #e8ecf4;
   --green: #17936a;
   --green-soft: #e6f4ee;
   --amber: #a8650d;
@@ -23,7 +23,7 @@
   --purple: #7a3fd6;
   --purple-soft: #f1eafd;
   --rose-soft: #fbeceb;
-  --today: #2354d4;
+  --today: #1f3561;
   --font-head: "Montserrat", "Helvetica Neue", Arial, sans-serif;
   --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
