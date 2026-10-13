@@ -52,6 +52,10 @@
     carsP57: [false, false, false, true, false, true, false], // 2 days
     // Re-planning (coach only). baseline: from this date on, schedule only the chapters not
     // in baseline.done. dropped: chapters removed from the plan. history: past re-plans.
+    tier: "coaching",            // core | coaching: decides whether client pages mention a coach
+    finalNote: "",               // optional text for the final-stretch days (after the last FL review)
+    view: "daily",               // daily | weekly | phase: how the client's calendar is laid out
+    catchUpDay: -1,              // weekday (0 = Sun) kept free of new chapters, or -1 for none
     baseline: null,              // { date: "2026-10-20", done: ["gc-1", ...] }
     dropped: [],
     history: []                  // [{ date, note, behind, summary }]
@@ -177,9 +181,12 @@
     const isStudyDate = n => studyDays[wd(n)];
     const offOnStudyBefore = n => { let k = 0; offSet.forEach(o => { if (o >= start && o < n && isStudyDate(o)) k++; }); return k; };
     const contentEnd = week1Sun + cw * 7 - 1;
-    let contentOffs = 0;
-    offSet.forEach(o => { if (o >= start && o <= contentEnd && isStudyDate(o)) contentOffs++; });
-    const totalContentDays = Math.max(1, cw * daysPerWk - startOffset - contentOffs);
+    // Optional weekly catch-up day: a study day with no new chapters.
+    const catchUp = plan.catchUpDay != null && plan.catchUpDay >= 0 && studyDays[plan.catchUpDay] && daysPerWk > 1 ? +plan.catchUpDay : -1;
+    // Every day that gets chapters: study days in the content weeks, minus off days and catch-up days.
+    const contentDayList = [];
+    for (let n = start; n <= Math.min(contentEnd, test - 1); n++) if (isStudyDate(n) && !offSet.has(n) && wd(n) !== catchUp) contentDayList.push(n);
+    const totalContentDays = Math.max(1, contentDayList.length);
 
     // Smoothed distribution: each content day gets an even share of chapters
     // (AM first, then PM), so no day has an empty AM slot next to a filled PM.
@@ -190,13 +197,13 @@
     const R = plan.baseline ? Math.max(dn(plan.baseline.date), start) : null;
     if (R != null) (plan.baseline.done || []).forEach(id => skip.add(id));
     const pool = queue.filter(c => !skip.has(c.id));
-    let firstSd = 1;
-    if (R != null) for (let n = start; n < R; n++) if (isStudyDate(n) && !offSet.has(n)) firstSd++;
-    const poolDays = Math.max(0, totalContentDays - (firstSd - 1));
+    const poolDayList = R != null ? contentDayList.filter(n => n >= R) : contentDayList;
+    const poolDays = poolDayList.length;
+    const dayIndex = new Map(poolDayList.map((n, i) => [n, i + 1]));
     const PN = pool.length;
-    function chaptersForDay(sd) {
-      const k = sd - firstSd + 1;
-      if (k < 1 || k > poolDays) return { am: [], pm: [] };
+    function chaptersForDay(n) {
+      const k = dayIndex.get(n);
+      if (!k) return { am: [], pm: [] };
       const from = Math.round((k - 1) * PN / poolDays);
       const to = Math.round(k * PN / poolDays);
       const list = pool.slice(from, Math.min(to, PN));
@@ -233,10 +240,9 @@
         // Content (AM / PM)
         day.am = []; day.pm = [];
         if (R != null && n < R) day.beforeReplan = true;
-        if (w <= cw && day.studyDay >= 1 && day.studyDay <= totalContentDays) {
-          const ch = chaptersForDay(day.studyDay);
-          day.am = ch.am; day.pm = ch.pm;
-        }
+        if (w <= cw && c === catchUp) day.catchUp = true;
+        const ch = chaptersForDay(n);
+        day.am = ch.am; day.pm = ch.pm;
 
         // CARS
         const source = w >= aamcStartWk ? "AAMC" : "Jack Westin";
@@ -260,11 +266,23 @@
       }
       weeks.push({ num: w, days, phase: w <= cw ? "content" : "practice", anyInRange });
     }
+    // Final stretch: after the last full-length review (or last full length) and before
+    // test day, nothing is assigned. The coach plans those days with each client.
+    let lastFlDay = null;
+    weeks.forEach(w => w.days.forEach(d => { if (d.kind === "study" && d.practice && d.practice.type !== "qbank") lastFlDay = d.n; }));
+    if (lastFlDay != null) weeks.forEach(w => w.days.forEach(d => {
+      if (d.kind === "study" && d.n > lastFlDay && d.n < test) {
+        if (d.practice && d.practice.type === "qbank") totalQs -= d.practice.q * d.practice.blocks;
+        d.kind = "open"; d.am = []; d.pm = []; d.cars = null; d.practice = null;
+      }
+    }));
     const contentDaysLeft = R != null ? poolDays : totalContentDays;
     return { weeks, D, totals: {
       qs: totalQs, fls, contentDays: totalContentDays, chapters: N - (plan.dropped || []).length,
       remaining: PN, contentDaysLeft, perDayLeft: contentDaysLeft ? PN / contentDaysLeft : Infinity,
-      unplaced: contentDaysLeft ? 0 : PN, contentEnd, replanDate: R
+      unplaced: contentDaysLeft ? 0 : PN, contentEnd, replanDate: R,
+      firstContentDay: contentDayList[0], lastContentDay: contentDayList[contentDayList.length - 1],
+      contentDayList, catchUp
     } };
   }
 
@@ -274,27 +292,43 @@
   function normProgress(p) { p = p || {}; return { ch: p.ch || {}, items: p.items || {} }; }
 
   // Where the client stands against the schedule as of `today`.
-  function status(plan, sched, progress, today) {
+  // view (defaults to the plan's): daily compares day by day, weekly week by week
+  // (any day within the week is fine), and phase compares chapter counts only.
+  function status(plan, sched, progress, today, view) {
     progress = normProgress(progress);
+    view = view || plan.view || "daily";
     const dropped = new Set(plan.dropped || []);
     const done = new Set(Object.keys(progress.ch).filter(id => !dropped.has(id)));
-    const due = new Map(); // id -> scheduled day number, for chapters due before today
+    const weekStart = today - wd(today);
+    const cutoff = view === "weekly" ? weekStart : today;          // due before this day
+    const periodEnd = view === "weekly" ? weekStart + 7 : today + 1; // "now" is [cutoff, periodEnd)
+    const due = new Map(); // id -> scheduled day number
     if (plan.baseline) (plan.baseline.done || []).forEach(id => due.set(id, null));
+    const placed = [];
+    const nowList = [];
     let ahead = 0;
-    const todayList = [];
     const byId = {};
     for (const w of sched.weeks) for (const d of w.days) {
       if (d.kind !== "study") continue;
       for (const c of d.am.concat(d.pm)) {
-        byId[c.id] = c;
-        if (d.n < today) due.set(c.id, d.n);
-        else if (d.n === today) todayList.push(c);
+        byId[c.id] = c; placed.push(c);
+        if (d.n < cutoff) due.set(c.id, d.n);
+        else if (d.n < periodEnd) nowList.push(c);
         else if (done.has(c.id)) ahead++;
       }
     }
-    const missing = [];
-    due.forEach((n, id) => { if (!done.has(id) && !dropped.has(id) && byId[id]) missing.push({ chapter: byId[id], n }); });
-    missing.sort((a, b) => (a.n || 0) - (b.n || 0));
+    let missing = [];
+    if (view === "phase") {
+      // Order is the client's choice: compare how many are done with how many should be.
+      const expected = due.size;
+      const doneN = Array.from(done).filter(id => due.has(id) || byId[id]).length;
+      const gap = expected - doneN;
+      if (gap > 0) missing = placed.filter(c => !done.has(c.id)).slice(0, gap).map(c => ({ chapter: c, n: null }));
+      ahead = Math.max(0, -gap);
+    } else {
+      due.forEach((n, id) => { if (!done.has(id) && !dropped.has(id) && byId[id]) missing.push({ chapter: byId[id], n }); });
+      missing.sort((x, y) => (x.n || 0) - (y.n || 0));
+    }
     // Pace: chapters finished per study day over the last 14 days
     const D = sched.D;
     let studyDays14 = 0;
@@ -302,13 +336,80 @@
     let done14 = 0;
     Object.values(progress.ch).forEach(dIso => { const n = dn(dIso); if (n >= today - 14 && n < today) done14++; });
     const total = sched.totals.chapters;
+    const dueNow = nowList.filter(c => !done.has(c.id)).length;
     return {
-      doneCount: done.size, total, behind: missing.length, missing, ahead,
-      dueToday: todayList.filter(c => !done.has(c.id)).length,
+      view, doneCount: done.size, total, behind: missing.length, missing, ahead,
+      dueNow, dueToday: dueNow, period: view === "weekly" ? "this week" : view === "daily" ? "today" : "",
       pace: studyDays14 ? done14 / studyDays14 : null, studyDays14, done14,
       state: missing.length ? "behind" : ahead ? "ahead" : "ontrack"
     };
   }
+
+  // Milestones shown to the client and coach. Each: { key, label, n (date), status, detail }
+  // status: done | ontrack | atrisk | missed | upcoming
+  function milestones(plan, sched, progress, today, carsActive, flLog) {
+    progress = normProgress(progress);
+    const out = [];
+    const t = sched.totals, D = sched.D;
+    if (!sched.weeks.length) return out;
+    const done = new Set(Object.keys(progress.ch));
+    const st = status(plan, sched, progress, today);
+    // Chapter milestones: halfway through content review, and content review complete
+    const placedByDay = [];
+    for (const w of sched.weeks) for (const d of w.days) if (d.kind === "study" && d.am && (d.am.length || d.pm.length)) placedByDay.push([d.n, d.am.concat(d.pm)]);
+    const baseDone = plan.baseline ? (plan.baseline.done || []) : [];
+    function chapterMilestone(key, label, untilN) {
+      const ids = baseDone.slice();
+      placedByDay.forEach(([n, list]) => { if (n <= untilN) list.forEach(c => ids.push(c.id)); });
+      if (!ids.length) return;
+      const left = ids.filter(id => !done.has(id)).length;
+      let status, detail;
+      if (!left) { status = "done"; detail = "All " + ids.length + " chapters done"; }
+      else if (today > untilN) { status = "missed"; detail = left + " of " + ids.length + " chapters still to do"; }
+      else if (st.behind) { status = "atrisk"; detail = st.behind + " behind right now; " + left + " to go"; }
+      else { status = "ontrack"; detail = (ids.length - left) + " of " + ids.length + " done"; }
+      out.push({ key, label, n: untilN, status, detail });
+    }
+    const list = t.contentDayList || [];
+    if (list.length > 3) chapterMilestone("half", "Halfway through content review", list[Math.ceil(list.length / 2) - 1]);
+    if (list.length) chapterMilestone("content", "Content review complete", list[list.length - 1]);
+    // CARS phases: Endurance (Phase 4) by the end of content review, Full Section (Phase 6) two weeks before test
+    function carsMilestone(key, phaseN, byN) {
+      const ph = CARS_PHASES[phaseN - 1];
+      let status, detail;
+      const a = carsActive || 1;
+      if (a >= phaseN) { status = "done"; detail = "Reached"; }
+      else if (today > byN) { status = "missed"; detail = "Now in Phase " + a; }
+      else {
+        const weeksLeft = Math.max(0, (byN - today) / 7);
+        status = (phaseN - a) > weeksLeft + 0.5 ? "atrisk" : "ontrack";
+        detail = "Now in Phase " + a + " · about " + Math.round(weeksLeft) + (Math.round(weeksLeft) === 1 ? " week" : " weeks") + " left";
+      }
+      out.push({ key, label: "CARS Phase " + phaseN + ": " + ph.name, n: byN, status, detail });
+    }
+    if (list.length) carsMilestone("cars4", 4, list[list.length - 1]);
+    carsMilestone("cars6", 6, D.test - 14);
+    // Goal score, judged on the average of the last 3 complete full lengths
+    if (plan.target) {
+      const full = (flLog || []).filter(r => r.scaled && FL_SECTIONS.every(s => r.scaled[s.key])).sort((x, y) => (x.date || "").localeCompare(y.date || ""));
+      const last3 = full.slice(-3).map(r => FL_SECTIONS.reduce((a, s) => a + (+r.scaled[s.key] || 0), 0));
+      let status = "upcoming", detail = "No full lengths logged yet";
+      if (last3.length) {
+        const avg = Math.round(last3.reduce((a, b) => a + b, 0) / last3.length);
+        status = avg >= +plan.target ? "ontrack" : "atrisk";
+        detail = "Recent average " + avg + (avg >= +plan.target ? "" : ", " + (+plan.target - avg) + " to go");
+      }
+      out.push({ key: "goal", label: "Goal score " + plan.target, n: D.test, status, detail });
+    }
+    return out.sort((x, y) => x.n - y.n);
+  }
+  // Wording that depends on whether the client has a coach
+  function hasCoach(plan) { return (plan && plan.tier) !== "core"; }
+  function finalStretchText(plan) {
+    if (plan.finalNote && plan.finalNote.trim()) return plan.finalNote.trim();
+    return hasCoach(plan) ? "Plan these days with your coach." : "No set assignments.";
+  }
+  const MILESTONE_LABEL = { done: "Done", ontrack: "On track", atrisk: "At risk", missed: "Missed", upcoming: "Upcoming" };
 
   // Coach re-plan. Returns a new plan; the client keeps the same ID and logs.
   // opts: { date (ISO, first day of the new layout), dropped: [ids], contentWeeks, test, note, summary, behind }
@@ -430,7 +531,7 @@
     CARS_PHASES, CARS_SOURCES, carsRowPasses, carsProgress,
     FL_SOURCES, FL_SECTIONS, ankiQuery,
     store, KEY_PLAN, KEY_COACH, keyCars, keyFL, keyProgress, loadProgress, saveProgress, loadClientPlan, planLinkSuffix,
-    emptyProgress, normProgress, status, replan,
+    emptyProgress, normProgress, status, replan, milestones, MILESTONE_LABEL, hasCoach, finalStretchText,
     exportData, importData, downloadJSON, esc, copyText, initTheme
   };
 })();

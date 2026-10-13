@@ -15,6 +15,13 @@ Drop this folder into the `projectfivetwenty.github.io` repo as `plan/`. The pag
 - Logging CARS sessions moves the client through the 7 phases, and the calendar's CARS assignments follow the current phase, same as the sheet.
 - Clients can download a backup file from the footer of any page and send it to you. Restoring it in any browser (including yours) shows their calendar and logs.
 
+## Plan settings
+
+- **Plan tier**: Core or Coaching. Core plans never mention a coach on the client's pages.
+- **Plan style**: Daily (a set list for each day), Weekly (a checklist per week; the client picks the day), or Phase (content by subject, fixed full-length dates, weekly question goals). Milestones and the on-track status appear in every style.
+- **Weekly catch-up day**: an optional study day with no new chapters.
+- **Final stretch**: days between the last full-length review and test day have no assignments. Write a final-stretch note per client, or leave it blank for the default (Coaching: "Plan these days with your coach." Core: "No set assignments.").
+
 ## Progress and re-planning
 
 - Clients check off chapters and practice blocks on the calendar. A status strip shows whether they're on track, ahead, or behind (and which chapters are missing).
@@ -29,7 +36,7 @@ Drop this folder into the `projectfivetwenty.github.io` repo as `plan/`. The pag
 - `engine.js` — the schedule logic (port of the Schedule tab formula), CARS phase rules, Anki search format, storage
 - `resources.js` — Kaplan, UWorld and Khan Academy chapter lists with Classic / Integrated / Hybrid order and Anki tags
 - `p520.css`, `ui.js` — shared styles and page chrome
-- `coach.html`, `calendar.html`, `cars.html`, `scores.html`, `index.html` (redirects to the calendar)
+- `coach.html`, `calendar.html` (+ `calendar-view.js`), `cars.html`, `scores.html`, `index.html` (redirects to the calendar)
 
 To add or fix a chapter or Anki tag, edit `resources.js`.
 

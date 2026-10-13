@@ -41,7 +41,7 @@
   .pv .qb { color: var(--green); }
   .pv .fl { color: var(--rose); font-weight: 600; }
   .pv .rv { color: var(--muted); }
-  .pv td.rest, .pv td.off { background: var(--soft); color: var(--muted); }
+  .pv td.rest, .pv td.off, .pv td.open { background: var(--soft); color: var(--muted); }
   .pv td.test { background: var(--accent-soft); color: var(--accent); font-weight: 700; }
   .pv td.none { background: transparent; }
   .pv .line { display: block; overflow-wrap: anywhere; }
@@ -59,6 +59,7 @@
   table.cmp td.chg { font-weight: 700; }
   textarea { resize: vertical; }
   .pv td.past { color: var(--muted); font-style: italic; }
+  .pv td.cu { background: var(--green-soft); }
   @media (max-width: 1100px) { .cp { grid-template-columns: 1fr; } }
   @media (max-width: 640px) { .ci-status { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   @media (max-width: 640px) { .derived { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
@@ -92,10 +93,30 @@
           <div class="field"><label for="name">Name</label><input id="name" type="text" autocomplete="off" placeholder="First name"></div>
           <div class="field"><label for="target">Goal score</label><input id="target" type="number" min="472" max="528" placeholder="e.g. 515"></div>
         </div>
+        <div class="field"><label for="tier">Plan tier</label>
+          <select id="tier"><option value="core">Core (one-time plan, no coach check-ins)</option><option value="coaching">Coaching (monthly, with check-ins)</option></select>
+          <p class="hint">Core plans never mention a coach on the client's pages.</p></div>
         <div class="grid2">
           <div class="field"><label for="start">Prep start date</label><input id="start" type="date"></div>
           <div class="field"><label for="test">Test date</label><input id="test" type="date"></div>
         </div>
+      </section>
+
+      <section class="panel stack">
+        <h2>Plan style</h2>
+        <div class="field"><label for="view">How the client sees the plan</label>
+          <select id="view">
+            <option value="daily">Daily: a set list for each day</option>
+            <option value="weekly">Weekly: a checklist per week, client picks the day</option>
+            <option value="phase">Phase: milestones and goals, client sets the pace</option>
+          </select>
+          <p class="hint" id="viewHint"></p></div>
+        <div class="field"><label for="catchUp">Weekly catch-up day</label>
+          <select id="catchUp"></select>
+          <p class="hint">A study day with no new chapters, for finishing anything left over. Practice and CARS stay as scheduled.</p></div>
+        <div class="field"><label for="finalNote">Final stretch note</label>
+          <textarea id="finalNote" rows="2" placeholder=""></textarea>
+          <p class="hint" id="finalHint"></p></div>
       </section>
 
       <section class="panel stack">
@@ -211,6 +232,10 @@
     $("structure").value = plan.structure;
     $("contentWeeks").value = String(plan.contentWeeks);
     $("qbank").value = plan.qbank;
+    $("view").value = plan.view || "daily";
+    $("tier").value = plan.tier || "coaching";
+    $("finalNote").value = plan.finalNote || "";
+    fillCatchUp();
     for (let i = 0; i < 7; i++) {
       $("sd" + i).checked = !!plan.studyDays[i];
       $("p4" + i).checked = !!plan.carsP4[i];
@@ -232,6 +257,10 @@
     plan.structure = $("structure").value;
     plan.contentWeeks = +$("contentWeeks").value;
     plan.qbank = $("qbank").value;
+    plan.view = $("view").value;
+    plan.tier = $("tier").value;
+    plan.finalNote = $("finalNote").value;
+    plan.catchUpDay = +$("catchUp").value;
     for (let i = 0; i < 7; i++) {
       plan.studyDays[i] = $("sd" + i).checked;
       plan.carsP4[i] = $("p4" + i).checked;
@@ -240,6 +269,16 @@
     plan.qtable = plan.qtable.map((r, i) => ({ q: Math.max(0, +$("qq" + i).value || 0), b: Math.max(0, +$("qb" + i).value || 0), aligned: $("qa" + i).checked }));
   }
 
+  const VIEW_HINT = {
+    daily: "Best for students who want structure. Same layout as the Google Sheet.",
+    weekly: "Best for students with changing schedules. Full lengths stay on fixed dates.",
+    phase: "Best for self-directed students. Shows content by subject, full-length dates and weekly question goals."
+  };
+  function fillCatchUp() {
+    const cur = plan.catchUpDay != null ? plan.catchUpDay : -1;
+    $("catchUp").innerHTML = '<option value="-1">None</option>' + P.DOW.map((d, i) => plan.studyDays[i] ? '<option value="' + i + '">' + d + "</option>" : "").join("");
+    $("catchUp").value = plan.studyDays[cur] ? String(cur) : "-1";
+  }
   function link() { return new URL("calendar.html", location.href).href.split("#")[0] + P.planLinkSuffix(plan); }
 
   function renderOffs() {
@@ -253,6 +292,15 @@
     P.store.set(P.KEY_COACH, plan);
     $("title").textContent = plan.name ? plan.name + "’s study plan" : "Build a study plan";
     plan.rev = Date.now();
+    $("viewHint").textContent = VIEW_HINT[plan.view] || "";
+    {
+      const s0 = P.buildSchedule(plan, 1);
+      const open = []; s0.weeks.forEach(w => w.days.forEach(d => { if (d.kind === "open") open.push(d.n); }));
+      $("finalNote").placeholder = P.hasCoach(Object.assign({}, plan, { finalNote: "" })) ? "Plan these days with your coach." : "No set assignments.";
+      $("finalHint").textContent = open.length ? "Shown on " + P.shortDate(open[0]) + " – " + P.shortDate(open[open.length - 1]) + ", the days between the last full-length review and test day. Leave blank to use the default above." : "There are no days between the last full-length review and test day in this plan.";
+    }
+    fillCatchUp();
+    plan.catchUpDay = +$("catchUp").value;
     const eff = effectivePlan();
     const sched = P.buildSchedule(eff, +$("pvPhase").value || 1);
     const D = sched.D;
@@ -283,7 +331,7 @@
       ["Week " + D.aamcStartWk, "CARS switches to AAMC"],
       [sched.totals.fls, "Practice full lengths"],
       [sched.totals.qs.toLocaleString(), "Total Qs scheduled"],
-      [dpw, "Study days / week"],
+      [{ daily: "Daily", weekly: "Weekly", phase: "Phase" }[plan.view] || "Daily", "Plan style"],
       [Math.max(0, D.test - P.todayDn()), "Days until test"]
     ].map(([b, s]) => '<div class="stat"><b>' + P.esc(b) + "</b><span>" + P.esc(s) + "</span></div>").join("") :
       '<div class="empty-state" style="grid-column:1/-1">Pick a start date, a later test date, and at least one study day.</div>';
@@ -305,8 +353,10 @@
         if (d.kind === "test") c += "Test Day";
         else if (d.kind === "off") c += "Off Day";
         else if (d.kind === "rest") c += "Rest / Review";
+        else if (d.kind === "open") c += "Final stretch (personalized)";
         else {
           if (d.beforeReplan && !d.am.length) c += '<span class="line rv">Before re-plan</span>';
+          if (d.catchUp) c += '<span class="line qb">Catch-up day</span>';
           d.am.forEach(x => c += '<span class="line c">AM: ' + P.esc(x.label) + "</span>");
           d.pm.forEach(x => c += '<span class="line c">PM: ' + P.esc(x.label) + "</span>");
           if (d.cars) c += '<span class="line cars">CARS: ' + P.esc(d.cars.task) + " (" + P.esc(d.cars.source) + ")</span>";
@@ -315,7 +365,7 @@
           else if (pr.type === "review") c += '<span class="line rv">Full Length Review</span>';
           else c += '<span class="line qb">QBank: ' + P.esc(pr.text) + (pr.aligned ? " (aligned)" : " (mixed)") + "</span>";
         }
-        h += '<td class="' + d.kind + '">' + c + "</td>";
+        h += '<td class="' + d.kind + (d.catchUp ? " cu" : "") + '">' + c + "</td>";
       }
       h += "</tr>";
     }

@@ -24,7 +24,7 @@
     el.className = "foot";
     el.innerHTML =
       '<div class="wrap">' +
-      "<div><p style=\"margin:0\">Your logs are saved in this browser on this device. Download a backup now and then, and send it to your coach before check-ins.</p></div>" +
+      "<div><p style=\"margin:0\">Your logs are saved in this browser on this device. " + (plan && P.hasCoach(plan) ? "Download a backup now and then, and send it to your coach before check-ins." : "Download a backup now and then so you have a copy.") + "</p></div>" +
       '<div class="foot-actions">' +
       (plan ? '<button class="btn btn-plain btn-sm" id="exportBtn" type="button">Download backup</button>' : "") +
       '<label class="btn btn-plain btn-sm" for="importFile">Restore backup</label>' +
@@ -63,7 +63,7 @@
   function noPlan(container) {
     container.innerHTML =
       '<div class="empty-state"><h2>No study plan on this device yet</h2>' +
-      "<p>Open the link your coach sent you, and your calendar will load here. " +
+      "<p>Open the study plan link you received from Project 520, and your calendar will load here. " +
       "If you saved a backup before, use <b>Restore backup</b> at the bottom of the page.</p></div>";
   }
 
