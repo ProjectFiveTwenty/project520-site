@@ -38,10 +38,10 @@ Drop this folder into the `projectfivetwenty.github.io` repo as `plan/`. The pag
 - `resources.js` — Kaplan, UWorld and Khan Academy chapter lists with Classic / Integrated / Hybrid order
 - `anki-tags.js` — the Anki search for each chapter, per deck (AnKing, Captain Hook, MileDown)
 - `p520.css`, `ui.js` — shared styles and page chrome
-- `coach.html`, `calendar.html` (+ `calendar-view.js`), `cars.html`, `scores.html`, `index.html` (redirects to the calendar)
+- `coach.html`, `calendar.html` (+ `calendar-view.js`), `cars.html`, `cars-guide.html` (the CARS training guide, linked from the tracker), `scores.html`, `index.html` (redirects to the calendar)
 
 To add or fix a chapter, edit `resources.js`. To add or fix an Anki search, edit `anki-tags.js`: find the chapter by its ID and comment (e.g. `"gc-5": { // General Chemistry Ch. 5: Chemical Kinetics`) and paste the search exactly as it appears in the sheet, inside the backticks. To add a deck for UWorld or Khan Academy, add a `captainhook:` or `miledown:` line to each chapter.
 
-After editing any file, change the `?v=` number in the four HTML files (for example `v=20261013a` to `v=20261013b`) so browsers load the new copy.
+After editing any file, change the `?v=` number in the five HTML files (for example `v=20261013a` to `v=20261013b`) so browsers load the new copy.
 
 `coach.html` is marked `noindex`, but anyone with the URL can open it. It holds no client data, only the form.

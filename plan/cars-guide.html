@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Project 520 CARS Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400&display=swap">
+<link rel="stylesheet" href="p520.css?v=20261013h">
+<style>
+  .guide { max-width: 780px; padding-bottom: 8px; }
+  .guide h2 { font-size: 1.35rem; margin: 34px 0 14px; }
+  .guide ul { margin: 0 0 14px; padding-left: 22px; display: grid; gap: 8px; }
+  .guide li { line-height: 1.6; }
+  .guide li ul { margin: 8px 0 0; gap: 4px; }
+  .note { font-style: italic; color: var(--muted); border-left: 3px solid var(--sky); padding: 4px 0 4px 14px; margin: 6px 0 0; }
+  .note b { color: var(--ink); font-style: italic; }
+
+  .phases { display: grid; gap: 8px; }
+  details.phase { border: 1px solid var(--line); border-radius: 10px; }
+  details.phase[open] { border-color: var(--sky); }
+  details.phase summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 12px; padding: 14px 16px; }
+  details.phase summary::-webkit-details-marker { display: none; }
+  details.phase summary::before { content: ""; width: 8px; height: 8px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(-45deg); transition: transform 0.15s ease; flex: none; margin-right: 2px; }
+  details.phase[open] summary::before { transform: rotate(45deg); }
+  .ph-n { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--sky-soft); color: var(--sky); font: 700 0.9rem/1 var(--font-head); flex: none; }
+  .ph-name { font: 700 1.05rem/1.25 var(--font-head); flex: 1; min-width: 0; }
+  .phase-body { padding: 0 16px 14px 70px; }
+  .phase-body ul { margin: 0; }
+  .divider { display: flex; align-items: center; gap: 12px; margin: 10px 4px; color: var(--muted); font-size: 0.88rem; text-align: center; }
+  .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  .tools { display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 10px; }
+  @media (max-width: 520px) { .phase-body { padding-left: 18px; } }
+  @media (prefers-reduced-motion: reduce) { details.phase summary::before { transition: none; } }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="page-head">
+    <div>
+      <div class="tagline"><a href="cars.html" style="color:inherit;text-decoration:none">← CARS tracker</a></div>
+      <h1>CARS training progression</h1>
+    </div>
+  </div>
+
+  <article class="guide">
+    <h2 style="margin-top:4px">Resource utilization</h2>
+    <ul>
+      <li><b>Jack Westin:</b> <a href="https://jackwestin.com/qbank#today_daily_passages" target="_blank" rel="noopener">Jack Westin</a> is widely considered the best, free, non-AAMC resource for daily MCAT CARS practice. Use daily passages for building strategy, endurance, and hitting early accuracy goals.</li>
+      <li><b>AAMC CARS Question Bank:</b> AAMC CARS logic is unique and practicing it exclusively during the second half of your prep fine-tunes your reasoning to best prepare for Test Day. Transition strictly to official AAMC materials in the final 6-8 weeks.</li>
+    </ul>
+    <p class="note" id="switchNote">Your schedule will automatically indicate <b>WHEN</b> to transition from Jack Westin to AAMC Material based on your total prep time.</p>
+
+    <h2>CARS progression outline</h2>
+    <div class="tools"><button class="btn btn-plain btn-sm" id="toggleAll" type="button">Expand all</button></div>
+    <div class="phases" id="phases">
+      <details class="phase" data-n="1">
+        <summary><span class="ph-n">1</span><span class="ph-name">Phase 1: Acclimation</span></summary>
+        <div class="phase-body"><ul>
+          <li><b>Daily Goal:</b> 1 CARS passage per day</li>
+          <li><b>Focus:</b> Developing a standard reading/annotating technique (e.g., highlighting main ideas, tracking author tone/attitudes).</li>
+          <li><b>Time Constraint:</b> Untimed or relaxed timing (11–15 min/passage). Do not rush.</li>
+          <li><b>Review:</b> Thoroughly analyze both correct and incorrect answers to understand why options are right or wrong.</li>
+        </ul></div>
+      </details>
+      <details class="phase" data-n="2">
+        <summary><span class="ph-n">2</span><span class="ph-name">Phase 2: Accuracy</span></summary>
+        <div class="phase-body"><ul>
+          <li><b>Goal:</b> Achieve 80%+ accuracy on 5 individual passages.</li>
+          <li><b>Format:</b> 1-2 passages per day, untimed or relaxed timing</li>
+          <li><b>Execution:</b> Focus on paragraph summaries, main ideas, and eliminating distractor choices.</li>
+        </ul></div>
+      </details>
+      <details class="phase" data-n="3">
+        <summary><span class="ph-n">3</span><span class="ph-name">Phase 3: Timing</span></summary>
+        <div class="phase-body"><ul>
+          <li><b>Goal:</b> Achieve 80%+ accuracy on 5 individual passages at 10 minutes per passage.</li>
+          <li><b>Format:</b> 1-2 timed passages per day, strict 10-minute time limit.</li>
+          <li><b>Execution:</b> Target ~4-4.5 minutes to read and ~5.5–6 minutes to answer questions per passage.</li>
+        </ul></div>
+      </details>
+      <details class="phase" data-n="4">
+        <summary><span class="ph-n">4</span><span class="ph-name">Phase 4: Endurance I (3-Passage Blocks)</span></summary>
+        <div class="phase-body"><ul>
+          <li><b>Goal:</b> 80%+ accuracy on 3 consecutive passages at 10 minutes per passage (30 min total).</li>
+          <li><b>Frequency:</b> 2–3 block sessions per week.</li>
+        </ul></div>
+      </details>
+      <div class="divider" role="separator">Transition from individual passages to consecutive passage blocks to build stamina</div>
+      <details class="phase" data-n="5">
+        <summary><span class="ph-n">5</span><span class="ph-name">Phase 5: Endurance II (6-Passage Blocks)</span></summary>
+        <div class="phase-body"><ul>
+          <li><b>Goal:</b> 90%+ accuracy on 6 consecutive passages at 10 minutes/passage (60 min total).</li>
+          <li><b>Frequency:</b> 2 block sessions per week.</li>
+        </ul></div>
+      </details>
+      <details class="phase" data-n="6">
+        <summary><span class="ph-n">6</span><span class="ph-name">Phase 6: Full Section</span></summary>
+        <div class="phase-body"><ul>
+          <li><b>Goal:</b> 90%+ accuracy on 9 consecutive passages at 10 minutes/passage (90 min total).</li>
+          <li><b>Frequency:</b> 1-2 full-length CARS section simulations per week.</li>
+        </ul></div>
+      </details>
+      <details class="phase" data-n="7">
+        <summary><span class="ph-n">7</span><span class="ph-name">Phase 7: Buffer Pacing</span></summary>
+        <div class="phase-body"><ul>
+          <li><b>Goal:</b> 95%+ accuracy on 9 consecutive passages at 9 minutes per passage (81 min total).</li>
+          <li><b>Why 9 minutes?</b> Aiming for 9 minutes per passage leaves you with a ~9-minute buffer on test day to review flagged questions or address difficult passages.</li>
+          <li><b>Execution:</b>
+            <ul>
+              <li>Complete full 9-passage blocks.</li>
+              <li>Integrate CARS seamlessly into your full AAMC Full-Length practice exams.</li>
+            </ul>
+          </li>
+        </ul></div>
+      </details>
+    </div>
+  </article>
+</main>
+
+<script src="anki-tags.js?v=20261013h"></script>
+<script src="resources.js?v=20261013h"></script>
+<script src="engine.js?v=20261013h"></script>
+<script src="ui.js?v=20261013h"></script>
+<script>
+(function () {
+  const P = window.P520, UI = window.P520UI;
+  const plan = P.loadClientPlan();
+  UI.nav("cars", plan);
+  UI.footer(plan);
+
+  // With a plan on this device: open the client's current phase and give the AAMC switch week.
+  if (plan) {
+    const active = P.carsProgress(P.store.get(P.keyCars(plan.id), [])).active;
+    const cur = document.querySelector('details.phase[data-n="' + active + '"]');
+    if (cur) {
+      cur.open = true;
+      const pill = document.createElement("span");
+      pill.className = "pill now";
+      pill.textContent = "Your current phase";
+      cur.querySelector("summary").appendChild(pill);
+    }
+    const D = P.derive(plan);
+    if (D.start != null && D.aamcStartWk > 1) {
+      const switchDay = D.week1Sun + (D.aamcStartWk - 1) * 7;
+      const n = document.createElement("p");
+      n.className = "note";
+      n.style.marginTop = "8px";
+      n.textContent = "For your plan, CARS switches to AAMC material in week " + D.aamcStartWk + " (the week of " + P.shortDate(switchDay) + ").";
+      document.getElementById("switchNote").after(n);
+    }
+  }
+
+  const all = Array.from(document.querySelectorAll("details.phase"));
+  const btn = document.getElementById("toggleAll");
+  const sync = () => { btn.textContent = all.every(d => d.open) ? "Collapse all" : "Expand all"; };
+  btn.addEventListener("click", () => { const open = !all.every(d => d.open); all.forEach(d => d.open = open); sync(); });
+  all.forEach(d => d.addEventListener("toggle", sync));
+  sync();
+})();
+</script>
+</body>
+</html>

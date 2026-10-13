@@ -100,7 +100,8 @@
   /* ---------- Shared pieces ---------- */
   function chapterTask(label, c, extra) {
     const done = isDone(c.id);
-    return '<label class="task check' + (done ? " done" : "") + '"><span class="kind k-content">' + label + "</span>" +
+    // No label: a further chapter listed under the AM or PM heading above it
+    return '<label class="task check' + (done ? " done" : "") + (label ? "" : " cont") + '">' + (label ? '<span class="kind k-content">' + label + "</span>" : "") +
       '<span class="what"><input type="checkbox" data-ch="' + c.id + '"' + (done ? " checked" : "") + ' aria-label="Done: ' + P.esc(c.label) + '">' +
       '<span><span class="subj">' + subj(c) + (extra ? " · " + extra : "") + "</span>" + P.esc(c.topic) + "</span></span></label>";
   }
@@ -145,8 +146,8 @@
     let body = doneLog(d.n);
     if (d.beforeReplan && !body) body += '<div class="task"><span class="kind k-review">Before re-plan</span><div class="what sub">No chapters checked off this day</div></div>';
     if (d.catchUp) body += '<div class="catchup-note">Catch-up day: finish any unchecked chapters</div>';
-    d.am.forEach((c, i) => body += chapterTask(i ? "AM, cont." : "AM", c));
-    d.pm.forEach((c, i) => body += chapterTask(i ? "PM, cont." : "PM", c));
+    d.am.forEach((c, i) => body += chapterTask(i ? "" : "AM", c));
+    d.pm.forEach((c, i) => body += chapterTask(i ? "" : "PM", c));
     body += carsTask(d);
     body += practiceTask(d);
     return '<div class="' + cls + '">' + top + body + "</div>";
@@ -187,7 +188,7 @@
           [{ label: "Whole week", list: chapters }].concat(chapters.map(c => ({ label: c.subject + " Ch. " + c.ch + ": " + c.topic, list: [c] })))) : "") + "</h3>";
       if (chapters.length) {
         left += '<div class="prog-line"><i style="width:' + Math.round(100 * doneHere / chapters.length) + '%"></i></div>';
-        left += '<div class="wk-list">' + chapters.map(c => chapterTask("", c).replace('<span class="kind k-content"></span>', "")).join("") + "</div>";
+        left += '<div class="wk-list">' + chapters.map(c => chapterTask("", c)).join("") + "</div>";
         left += '<p class="hint">Listed in a suggested order. Do them on any days this week.</p>';
       } else {
         const before = w.days.map(d => doneLog(d.n)).join("");
@@ -260,7 +261,7 @@
           '</span><span class="prog-line"><i style="width:' + Math.round(100 * d2 / list.length) + '%"></i></span></summary><div class="subj-body">' +
           '<div class="row-between"><span class="hint">Unchecked chapters first</span>' +
           ankiButton("Anki for " + sj, "Chapters in this subject", [{ label: "All " + sj + " chapters not checked off", list: list.filter(c => !isDone(c.id)) }].concat(list.map(c => ({ label: "Ch. " + c.ch + ": " + c.topic, list: [c] })))) + "</div>" +
-          list.slice().sort((a, b) => isDone(a.id) - isDone(b.id)).map(c => chapterTask("", c).replace('<span class="kind k-content"></span>', "")).join("") +
+          list.slice().sort((a, b) => isDone(a.id) - isDone(b.id)).map(c => chapterTask("", c)).join("") +
           "</div></details>";
       });
       html += "</section>";
