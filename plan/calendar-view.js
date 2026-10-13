@@ -10,6 +10,8 @@
   if (!plan) { UI.noPlan(weeksEl); return; }
 
   const view = plan.view || "daily";
+  const deck = plan.deck || "anking";
+  const deckName = P.deckLabel(deck);
   const carsLog = P.store.get(P.keyCars(plan.id), []);
   const flLog = P.store.get(P.keyFL(plan.id), []);
   const carsDates = new Set(carsLog.map(r => r.date));
@@ -337,13 +339,13 @@
     e.preventDefault();
     const set = ankiSets[+b.dataset.anki];
     $("ankiTitle").textContent = set.title;
-    $("ankiSub").textContent = set.sub || "";
-    const withQ = set.entries.map(en => ({ label: en.label, list: en.list, q: P.ankiQuery(en.list), onlyIfBoth: en.onlyIfBoth }));
+    $("ankiSub").textContent = (set.sub ? set.sub + " · " : "") + deckName + " deck";
+    const withQ = set.entries.map(en => ({ label: en.label, list: en.list, q: P.ankiQuery(en.list, deck), onlyIfBoth: en.onlyIfBoth }));
     const nonEmpty = withQ.filter(x => x.list.length && !x.onlyIfBoth).length;
     current = withQ.filter(x => x.list.length && (!x.onlyIfBoth || nonEmpty > 1));
     $("ankiList").innerHTML = current.map((x, i) => {
-      const missing = x.list.filter(c => !c.tag).map(c => c.label);
-      const emptyText = "No Anki tag yet for " + (missing.join("; ") || "this chapter");
+      const missing = x.list.filter(c => !P.chapterTag(c, deck)).map(c => c.label);
+      const emptyText = "No " + deckName + " search yet for " + (missing.join("; ") || "this chapter");
       return '<div><div class="row-between" style="margin-bottom:6px"><span class="kind k-content">' + P.esc(x.label) + "</span>" +
         '<button class="btn btn-sm" type="button" data-copy="' + i + '"' + (x.q ? "" : " disabled") + ">Copy</button></div>" +
         '<div class="query' + (x.q ? "" : " empty") + '">' + P.esc(x.q || emptyText) + "</div></div>";

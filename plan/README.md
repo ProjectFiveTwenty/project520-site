@@ -20,6 +20,7 @@ Drop this folder into the `projectfivetwenty.github.io` repo as `plan/`. The pag
 - **Plan tier**: Core or Coaching. Core plans never mention a coach on the client's pages.
 - **Plan style**: Daily (a set list for each day), Weekly (a checklist per week; the client picks the day), or Phase (content by subject, fixed full-length dates, weekly question goals). Milestones and the on-track status appear in every style.
 - **Weekly catch-up day**: an optional study day with no new chapters.
+- **Anki deck**: AnKing MCAT, Captain Hook, or MileDown. The client's Anki buttons give searches for that deck. The list shows how many of the chosen resource's chapters have a search for each deck.
 - **Final stretch**: days between the last full-length review and test day have no assignments. Write a final-stretch note per client, or leave it blank for the default (Coaching: "Plan these days with your coach." Core: "No set assignments.").
 
 ## Progress and re-planning
@@ -34,10 +35,13 @@ Drop this folder into the `projectfivetwenty.github.io` repo as `plan/`. The pag
 ## Files
 
 - `engine.js` — the schedule logic (port of the Schedule tab formula), CARS phase rules, Anki search format, storage
-- `resources.js` — Kaplan, UWorld and Khan Academy chapter lists with Classic / Integrated / Hybrid order and Anki tags
+- `resources.js` — Kaplan, UWorld and Khan Academy chapter lists with Classic / Integrated / Hybrid order
+- `anki-tags.js` — the Anki search for each chapter, per deck (AnKing, Captain Hook, MileDown)
 - `p520.css`, `ui.js` — shared styles and page chrome
 - `coach.html`, `calendar.html` (+ `calendar-view.js`), `cars.html`, `scores.html`, `index.html` (redirects to the calendar)
 
-To add or fix a chapter or Anki tag, edit `resources.js`.
+To add or fix a chapter, edit `resources.js`. To add or fix an Anki search, edit `anki-tags.js`: find the chapter by its ID and comment (e.g. `"gc-5": { // General Chemistry Ch. 5: Chemical Kinetics`) and paste the search exactly as it appears in the sheet, inside the backticks. To add a deck for UWorld or Khan Academy, add a `captainhook:` or `miledown:` line to each chapter.
+
+After editing any file, change the `?v=` number in the four HTML files (for example `v=20261013a` to `v=20261013b`) so browsers load the new copy.
 
 `coach.html` is marked `noindex`, but anyone with the URL can open it. It holds no client data, only the form.

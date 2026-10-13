@@ -38,6 +38,7 @@
     studyDays: [true, true, true, true, true, true, false], // Sun..Sat
     offDays: [],
     qbank: "UWorld",
+    deck: "anking",              // Anki deck the client uses: anking | captainhook | miledown
     qtable: [                    // index 1..8: Qs per block, blocks per day, content-aligned
       { q: 10, b: 1, aligned: true },
       { q: 15, b: 1, aligned: true },
@@ -425,8 +426,27 @@
   }
 
   /* ---------- Anki search (EZ Anki Tags format) ---------- */
-  function ankiQuery(chapters) {
-    const terms = (chapters || []).map(c => c.tag).filter(Boolean).map(t => / OR /.test(t) ? "(" + t + ")" : t);
+  const DECKS = window.P520_ANKI_DECKS || [{ key: "anking", label: "AnKing MCAT" }];
+  function deckLabel(deck) { const d = DECKS.find(x => x.key === deck); return d ? d.label : "AnKing MCAT"; }
+  function chapterTag(c, deck) { return ((c && c.tags) || {})[deck || "anking"] || ""; }
+  // How many of a resource's chapters have a search for this deck
+  function deckCoverage(resourceKey, deck) {
+    const r = (window.P520_RESOURCES || {})[resourceKey];
+    if (!r) return { tagged: 0, total: 0, missing: [] };
+    const missing = r.chapters.filter(c => !chapterTag(c, deck));
+    return { tagged: r.chapters.length - missing.length, total: r.chapters.length, missing };
+  }
+  // One search for a set of chapters. Each chapter's search is wrapped in parentheses when it
+  // has more than one term, so OR, negation and quoted deck names combine safely.
+  function ankiQuery(chapters, deck) {
+    const seen = new Set();
+    const terms = [];
+    (chapters || []).forEach(c => {
+      const t = chapterTag(c, deck).trim();
+      if (!t || seen.has(t)) return;
+      seen.add(t);
+      terms.push(/\s/.test(t.replace(/"[^"]*"/g, '""')) ? "(" + t + ")" : t); // spaces inside quotes don't count
+    });
     if (!terms.length) return "";
     const joined = terms.join(" OR ");
     return (terms.length > 1 ? "(" + joined + ")" : joined) + " is:suspended -flag:1";
@@ -529,7 +549,7 @@
     dn, iso, wd, md, longDate, shortDate, todayDn, DOW, DOW3,
     DEFAULT_PLAN, normalizePlan, encodePlan, decodePlan, derive, buildSchedule, makeId,
     CARS_PHASES, CARS_SOURCES, carsRowPasses, carsProgress,
-    FL_SOURCES, FL_SECTIONS, ankiQuery,
+    FL_SOURCES, FL_SECTIONS, ankiQuery, DECKS, deckLabel, chapterTag, deckCoverage,
     store, KEY_PLAN, KEY_COACH, keyCars, keyFL, keyProgress, loadProgress, saveProgress, loadClientPlan, planLinkSuffix,
     emptyProgress, normProgress, status, replan, milestones, MILESTONE_LABEL, hasCoach, finalStretchText,
     exportData, importData, downloadJSON, esc, copyText, initTheme

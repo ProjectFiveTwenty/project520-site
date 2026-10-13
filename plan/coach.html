@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400&display=swap">
-<link rel="stylesheet" href="p520.css?v=20261012c">
+<link rel="stylesheet" href="p520.css?v=20261013a">
 <style>
   .cp { display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); gap: 20px; align-items: start; }
   .side { display: grid; gap: 16px; }
@@ -132,6 +132,9 @@
           <div class="field"><label for="qbank">Question bank</label>
             <select id="qbank"><option>UWorld</option><option>Kaplan</option><option>Blueprint</option><option>ExamKrackers</option><option>Princeton Review</option><option>Altius</option></select></div>
         </div>
+        <div class="field"><label for="deck">Anki deck</label>
+          <select id="deck"></select>
+          <p class="hint" id="deckHint"></p></div>
         <div class="field"><span class="label">Study days</span><div class="chips" id="studyDays"></div></div>
         <div class="field">
           <label for="offDate">Scheduled off days</label>
@@ -204,9 +207,10 @@
 
 <footer class="foot"><div class="wrap"><p style="margin:0">Plans are saved in this browser as you edit. The client link carries the whole plan, so nothing is stored on a server.</p><button class="theme-btn" id="themeBtn" type="button">Dark mode</button></div></footer>
 
-<script src="resources.js?v=20261012c"></script>
-<script src="engine.js?v=20261012c"></script>
-<script src="ui.js?v=20261012c"></script>
+<script src="anki-tags.js?v=20261013a"></script>
+<script src="resources.js?v=20261013a"></script>
+<script src="engine.js?v=20261013a"></script>
+<script src="ui.js?v=20261013a"></script>
 <script>
 (function () {
   const P = window.P520, UI = window.P520UI;
@@ -232,6 +236,7 @@
     $("structure").value = plan.structure;
     $("contentWeeks").value = String(plan.contentWeeks);
     $("qbank").value = plan.qbank;
+    fillDecks();
     $("view").value = plan.view || "daily";
     $("tier").value = plan.tier || "coaching";
     $("finalNote").value = plan.finalNote || "";
@@ -257,6 +262,7 @@
     plan.structure = $("structure").value;
     plan.contentWeeks = +$("contentWeeks").value;
     plan.qbank = $("qbank").value;
+    plan.deck = $("deck").value || "anking";
     plan.view = $("view").value;
     plan.tier = $("tier").value;
     plan.finalNote = $("finalNote").value;
@@ -274,6 +280,27 @@
     weekly: "Best for students with changing schedules. Full lengths stay on fixed dates.",
     phase: "Best for self-directed students. Shows content by subject, full-length dates and weekly question goals."
   };
+  // Deck list shows how many of the chosen resource's chapters have searches for each deck
+  function fillDecks() {
+    const res = $("resource").value || plan.resource;
+    const cur = plan.deck || "anking";
+    $("deck").innerHTML = P.DECKS.map(d => {
+      const cov = P.deckCoverage(res, d.key);
+      const note = cov.tagged === cov.total ? "" : cov.tagged ? " (" + cov.tagged + " of " + cov.total + " chapters)" : " (no " + ((window.P520_RESOURCES[res] || {}).label || "") + " searches yet)";
+      return '<option value="' + d.key + '">' + P.esc(d.label + note) + "</option>";
+    }).join("");
+    $("deck").value = cur;
+    if (!$("deck").value) $("deck").value = "anking";
+  }
+  function deckHint() {
+    const cov = P.deckCoverage(plan.resource, plan.deck);
+    const label = P.deckLabel(plan.deck), resLabel = (window.P520_RESOURCES[plan.resource] || {}).label || "";
+    if (!cov.total) return "";
+    if (cov.tagged === cov.total) return "The client's Anki buttons give " + label + " searches for every " + resLabel + " chapter.";
+    if (!cov.tagged) return "There are no " + label + " searches for " + resLabel + " yet, so the client's Anki buttons will say so. Pick another deck or resource, or add searches to anki-tags.js.";
+    return cov.missing.length + " " + resLabel + (cov.missing.length === 1 ? " chapter has" : " chapters have") + " no " + label + " search yet: " +
+      cov.missing.slice(0, 4).map(c => c.subject + " Ch. " + c.ch).join(", ") + (cov.missing.length > 4 ? ", and " + (cov.missing.length - 4) + " more" : "") + ".";
+  }
   function fillCatchUp() {
     const cur = plan.catchUpDay != null ? plan.catchUpDay : -1;
     $("catchUp").innerHTML = '<option value="-1">None</option>' + P.DOW.map((d, i) => plan.studyDays[i] ? '<option value="' + i + '">' + d + "</option>" : "").join("");
@@ -293,6 +320,7 @@
     $("title").textContent = plan.name ? plan.name + "’s study plan" : "Build a study plan";
     plan.rev = Date.now();
     $("viewHint").textContent = VIEW_HINT[plan.view] || "";
+    { const keep = plan.deck; fillDecks(); $("deck").value = keep; plan.deck = $("deck").value || "anking"; $("deckHint").textContent = deckHint(); }
     {
       const s0 = P.buildSchedule(plan, 1);
       const open = []; s0.weeks.forEach(w => w.days.forEach(d => { if (d.kind === "open") open.push(d.n); }));
