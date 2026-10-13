@@ -37,6 +37,17 @@
   .task .sub { font-size: 0.76rem; color: var(--muted); }
   .day .note { color: var(--muted); font-size: 0.86rem; }
   .day.test .note { color: var(--accent); font: 800 1.05rem/1.2 var(--font-head); }
+  .task.check { cursor: pointer; }
+  .task.check .what { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 7px; align-items: start; }
+  .task.check input { margin: 2px 0 0; width: 15px; height: 15px; accent-color: var(--green); cursor: pointer; }
+  .task.check .sub { display: block; }
+  .task.done .what, .task.done .sub { color: var(--muted); }
+  .task.done .what > span:last-child { text-decoration: line-through; text-decoration-color: var(--muted); }
+  .task.done-log .what { color: var(--muted); }
+  .status-strip { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin-bottom: 14px; font-size: 0.92rem; }
+  .status-strip > span:last-child { flex: 1; min-width: 200px; color: var(--muted); }
+  .coach-note { border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 0 10px 10px 0; padding: 12px 16px; margin-bottom: 14px; }
+  .coach-note p { margin: 6px 0 0; }
 
   @media (max-width: 980px) {
     .days { grid-template-columns: 1fr; gap: 6px; }
@@ -95,6 +106,7 @@
   if (!plan) { UI.noPlan(weeksEl); return; }
 
   const carsLog = P.store.get(P.keyCars(plan.id), []);
+  const carsDates = new Set(carsLog.map(r => r.date));
   const cars = P.carsProgress(carsLog);
   const sched = P.buildSchedule(plan, cars.active);
   const today = P.todayDn();
@@ -103,6 +115,9 @@
   const currentWeek = Math.floor((today - D.week1Sun) / 7) + 1;
   const inPlan = currentWeek >= 1 && currentWeek <= sched.weeks.length;
   const phase = P.CARS_PHASES[cars.active - 1];
+  let progress = P.loadProgress(plan.id);
+  const allChapters = {};
+  (D.res ? D.res.chapters : []).forEach(c => allChapters[c.id] = c);
 
   head.innerHTML =
     '<div><div class="tagline">Study calendar</div>' +
@@ -112,17 +127,58 @@
     " Content review uses " + P.esc(D.res ? D.res.label : "") + "; practice questions use " + P.esc(plan.qbank) + ".</p></div>" +
     '<div class="stats">' +
     '<div class="stat"><b>' + (inPlan ? currentWeek + " / " + sched.weeks.length : sched.weeks.length) + "</b><span>" + (inPlan ? "Current week" : "Weeks in plan") + "</span></div>" +
-    '<div class="stat"><b>' + sched.totals.fls + "</b><span>Practice full lengths</span></div>" +
+    '<div class="stat"><b id="statDone">–</b><span>Chapters done</span></div>' +
     '<a class="stat" href="cars.html" style="text-decoration:none;color:inherit"><b>Phase ' + cars.active + "</b><span>CARS: " + phase.name + "</span></a>" +
     "</div>";
+
+  // Coach's note from the latest re-plan
+  const last = (plan.history || [])[plan.history.length - 1];
+  if (last) {
+    const n = document.createElement("div");
+    n.className = "coach-note";
+    n.innerHTML = '<div class="label">Plan updated ' + P.shortDate(P.dn(last.date)) + " by your coach</div>" +
+      (last.note ? "<p>" + P.esc(last.note) + "</p>" : "<p>Your remaining chapters were spread over the days ahead. Earlier days now show what you completed.</p>");
+    head.after(n);
+  }
+  const statusEl = document.createElement("div");
+  statusEl.className = "status-strip";
+  statusEl.setAttribute("role", "status");
+  document.getElementById("toolbar").before(statusEl);
+
+  function renderStatus() {
+    const st = P.status(plan, sched, progress, today);
+    document.getElementById("statDone").textContent = st.doneCount + " / " + st.total;
+    let html;
+    if (today < D.start) html = '<span class="pill locked">Not started</span><span>Your plan starts ' + P.longDate(D.start) + ".</span>";
+    else if (st.state === "behind") {
+      const names = st.missing.slice(0, 3).map(m => P.esc(m.chapter.subject) + " Ch. " + m.chapter.ch).join(", ");
+      html = '<span class="pill miss">' + st.behind + (st.behind === 1 ? " chapter" : " chapters") + " behind</span>" +
+        "<span>Not checked off yet: " + names + (st.behind > 3 ? ", and " + (st.behind - 3) + " more" : "") +
+        ". Check them off as you catch up, and tell your coach if you can't catch up this week.</span>";
+    } else if (st.state === "ahead") html = '<span class="pill done">' + st.ahead + (st.ahead === 1 ? " chapter" : " chapters") + " ahead</span><span>Nice work. Everything through today is done.</span>";
+    else html = '<span class="pill done">On track</span><span>' + (st.dueToday ? st.dueToday + (st.dueToday === 1 ? " chapter" : " chapters") + " left for today." : "Every chapter through today is checked off.") + "</span>";
+    statusEl.innerHTML = html;
+  }
 
   document.getElementById("toolbar").hidden = false;
   const qbankName = P.esc(plan.qbank || "QBank");
   const subj = c => P.esc(c.subject) + " · Ch. " + c.ch;
   const dayMap = new Map();
+  const isDone = id => !!progress.ch[id];
+  const placed = new Set();
+  sched.weeks.forEach(w => w.days.forEach(d => { if (d.am) d.am.concat(d.pm).forEach(c => placed.add(c.id)); }));
 
   function chapterTask(label, c) {
-    return '<div class="task"><span class="kind k-content">' + label + '</span><div class="what"><span class="subj">' + subj(c) + "</span>" + P.esc(c.topic) + "</div></div>";
+    const done = isDone(c.id);
+    return '<label class="task check' + (done ? " done" : "") + '"><span class="kind k-content">' + label + "</span>" +
+      '<span class="what"><input type="checkbox" data-ch="' + c.id + '" data-date=""' + (done ? " checked" : "") + ' aria-label="Done: ' + P.esc(c.label) + '">' +
+      '<span><span class="subj">' + subj(c) + "</span>" + P.esc(c.topic) + "</span></span></label>";
+  }
+  function itemTask(d, kindCls, kindText, what, sub) {
+    const key = d.iso + ":p", done = !!progress.items[key];
+    return '<label class="task check' + (done ? " done" : "") + '"><span class="kind ' + kindCls + '">' + kindText + "</span>" +
+      '<span class="what"><input type="checkbox" data-item="' + key + '"' + (done ? " checked" : "") + ' aria-label="Done: ' + P.esc(what) + '">' +
+      "<span>" + P.esc(what) + (sub ? '<span class="sub">' + P.esc(sub) + "</span>" : "") + "</span></span></label>";
   }
 
   function dayHtml(d) {
@@ -138,13 +194,21 @@
     if (d.kind === "off") return '<div class="' + cls + '">' + top + '<div class="note">Off day</div></div>';
     if (d.kind === "rest") return '<div class="' + cls + '">' + top + '<div class="note">Rest / review</div></div>';
     let body = "";
+    // Chapters finished this day that the current layout doesn't place anywhere
+    // (finished before a re-plan) are listed as done on the day they were checked off.
+    const doneThatDay = Object.keys(progress.ch).filter(id => progress.ch[id] === d.iso && allChapters[id] && !placed.has(id));
+    body += doneThatDay.map(id => '<div class="task done-log"><span class="kind k-content">Done</span><div class="what"><span class="subj">' + subj(allChapters[id]) + "</span>" + P.esc(allChapters[id].topic) + "</div></div>").join("");
+    if (d.beforeReplan && !doneThatDay.length) body += '<div class="task"><span class="kind k-review">Before re-plan</span><div class="what sub">No chapters checked off this day</div></div>';
     d.am.forEach((c, i) => body += chapterTask(i ? "AM, cont." : "AM", c));
     d.pm.forEach((c, i) => body += chapterTask(i ? "PM, cont." : "PM", c));
-    if (d.cars) body += '<div class="task"><span class="kind k-cars">CARS</span><div class="what">' + P.esc(d.cars.task) + '</div><div class="sub">' + P.esc(d.cars.source) + "</div></div>";
+    if (d.cars) {
+      const logged = carsDates.has(d.iso);
+      body += '<div class="task' + (logged ? " done" : "") + '"><span class="kind k-cars">CARS' + (logged ? " · logged ✓" : "") + '</span><div class="what">' + P.esc(d.cars.task) + '</div><div class="sub">' + P.esc(d.cars.source) + (logged ? "" : ' · <a href="cars.html">Log it</a>') + "</div></div>";
+    }
     const pr = d.practice;
-    if (pr.type === "fl") body += '<div class="task"><span class="kind k-fl">Full length</span><div class="what">Practice full length</div><div class="sub">Log scores after</div></div>';
-    else if (pr.type === "review") body += '<div class="task"><span class="kind k-review">Full length</span><div class="what">Full length review</div></div>';
-    else body += '<div class="task"><span class="kind k-qbank">' + qbankName + '</span><div class="what num">' + P.esc(pr.text) + '</div><div class="sub">' + (pr.aligned ? "Content-aligned" : "Mixed subjects") + "</div></div>";
+    if (pr.type === "fl") body += itemTask(d, "k-fl", "Full length", "Practice full length", "Log scores after");
+    else if (pr.type === "review") body += itemTask(d, "k-review", "Full length", "Full length review", "");
+    else body += itemTask(d, "k-qbank", qbankName, pr.text, pr.aligned ? "Content-aligned" : "Mixed subjects");
     return '<div class="' + cls + '">' + top + body + "</div>";
   }
 
@@ -160,8 +224,25 @@
       '<div class="days">' + w.days.map(dayHtml).join("") + "</div></section>";
   }
   weeksEl.innerHTML = html;
+  renderStatus();
+
+  // Check-offs
+  weeksEl.addEventListener("change", e => {
+    const box = e.target;
+    if (box.type !== "checkbox") return;
+    if (box.dataset.ch) {
+      if (box.checked) progress.ch[box.dataset.ch] = P.iso(today); else delete progress.ch[box.dataset.ch];
+    } else if (box.dataset.item) {
+      if (box.checked) progress.items[box.dataset.item] = true; else delete progress.items[box.dataset.item];
+    } else return;
+    P.saveProgress(plan.id, progress);
+    box.closest(".task").classList.toggle("done", box.checked);
+    renderStatus();
+  });
 
   const jump = document.getElementById("jumpBtn");
+  // Always open on the current week, even after a reload restores an old scroll position.
+  if ("scrollRestoration" in history) history.scrollRestoration = "manual";
   if (inPlan) {
     jump.addEventListener("click", () => document.getElementById("week-" + currentWeek).scrollIntoView({ block: "start" }));
     if (currentWeek > 1) requestAnimationFrame(() => {

@@ -67,5 +67,8 @@
       "If you saved a backup before, use <b>Restore backup</b> at the bottom of the page.</p></div>";
   }
 
+  // A new plan link pasted into an open tab only changes the #hash; reload so it takes effect.
+  window.addEventListener("hashchange", () => { if (/p=/.test(location.hash)) location.reload(); });
+
   window.P520UI = { nav, footer, toast, noPlan };
 })();

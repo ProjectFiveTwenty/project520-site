@@ -46,7 +46,21 @@
   .pv td.none { background: transparent; }
   .pv .line { display: block; overflow-wrap: anywhere; }
 
+  .presets { display: flex; flex-wrap: wrap; gap: 6px; }
+  .presets .btn.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+  .ci-status { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  .ci-status .stat { min-width: 0; }
+  .ci-missing { grid-column: 1 / -1; font-size: 0.88rem; color: var(--muted); }
+  details.drop { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+  details.drop summary { cursor: pointer; font-weight: 600; }
+  .drop-list { columns: 2 240px; column-gap: 18px; margin-top: 10px; font-size: 0.86rem; }
+  .drop-list label { display: flex; gap: 7px; align-items: flex-start; break-inside: avoid; padding: 3px 0; }
+  .drop-list .grp { font: 700 0.72rem/1.2 var(--font-head); letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); margin: 8px 0 2px; break-after: avoid; }
+  table.cmp td.chg { font-weight: 700; }
+  textarea { resize: vertical; }
+  .pv td.past { color: var(--muted); font-style: italic; }
   @media (max-width: 1100px) { .cp { grid-template-columns: 1fr; } }
+  @media (max-width: 640px) { .ci-status { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   @media (max-width: 640px) { .derived { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 </style>
 </head>
@@ -129,6 +143,31 @@
     </div>
 
     <div class="stack" style="min-width:0">
+      <section class="panel stack" id="ciPanel">
+        <div class="row-between"><h2 style="margin:0">Check-in &amp; re-plan</h2>
+          <div class="inline"><label class="btn btn-plain btn-sm" for="backupFile">Load client backup</label><input id="backupFile" type="file" accept="application/json,.json" hidden></div></div>
+        <p class="hint" id="ciIntro">Load the backup file your client downloads from the bottom of their calendar. You'll see where they stand and can re-plan the rest of their schedule from a date you pick.</p>
+        <div id="ciBody" class="stack" hidden>
+          <div id="ciStatus" class="ci-status"></div>
+          <div class="grid2">
+            <div class="field"><label for="rpDate">Re-plan starting</label><input id="rpDate" type="date"><p class="hint">Chapters not done are spread over content days from this date on.</p></div>
+            <div class="field"><span class="label">Quick options</span>
+              <div class="presets">
+                <button class="btn btn-plain btn-sm" type="button" data-preset="absorb">Absorb</button>
+                <button class="btn btn-plain btn-sm" type="button" data-preset="cw1">Content +1 wk</button>
+                <button class="btn btn-plain btn-sm" type="button" data-preset="cw2">Content +2 wks</button>
+                <button class="btn btn-plain btn-sm" type="button" data-preset="t2">Test +2 wks</button>
+                <button class="btn btn-plain btn-sm" type="button" data-preset="t4">Test +4 wks</button>
+              </div>
+              <p class="hint">Each starts from the client's current plan. You can also edit content weeks or the test date on the left.</p></div>
+          </div>
+          <details class="drop" id="dropBox"><summary>Drop chapters <span class="hint" id="dropCount"></span></summary><div class="drop-list" id="dropList"></div></details>
+          <div class="field"><label for="rpNote">Note to client</label><textarea id="rpNote" rows="2" placeholder="Shown at the top of their calendar, e.g. We spread your remaining chapters over the next 3 weeks."></textarea></div>
+          <div class="table-scroll"><table class="data cmp" id="cmp"></table></div>
+          <div class="inline" style="flex-wrap:wrap"><button class="btn" id="applyRp" type="button">Save re-plan</button><button class="btn btn-plain" id="closeCi" type="button">Close check-in</button></div>
+          <p class="hint" id="rpMsg" role="status"></p>
+        </div>
+      </section>
       <div class="derived" id="derived"></div>
       <section class="panel" style="padding:16px">
         <div class="row-between" style="margin-bottom:12px">
@@ -156,7 +195,7 @@
   let plan = P.normalizePlan(P.store.get(P.KEY_COACH, null) || {});
 
   // Build static controls
-  $("contentWeeks").innerHTML = Array.from({ length: 11 }, (_, i) => i + 2).map(n => "<option>" + n + "</option>").join("");
+  $("contentWeeks").innerHTML = Array.from({ length: 15 }, (_, i) => i + 2).map(n => "<option>" + n + "</option>").join("");
   $("pvPhase").innerHTML = P.CARS_PHASES.map(p => '<option value="' + p.n + '">' + p.n + ". " + P.esc(p.name) + "</option>").join("");
   function chips(id, name) {
     $(id).innerHTML = P.DOW3.map((d, i) => '<label class="chip"><input type="checkbox" id="' + name + i + '" data-i="' + i + '"><span>' + d + "</span></label>").join("");
@@ -213,7 +252,9 @@
     read();
     P.store.set(P.KEY_COACH, plan);
     $("title").textContent = plan.name ? plan.name + "’s study plan" : "Build a study plan";
-    const sched = P.buildSchedule(plan, +$("pvPhase").value || 1);
+    plan.rev = Date.now();
+    const eff = effectivePlan();
+    const sched = P.buildSchedule(eff, +$("pvPhase").value || 1);
     const D = sched.D;
     const dpw = D.daysPerWk;
     plan.qtable.forEach((r, i) => $("qw" + i).textContent = (r.q * r.b * dpw).toLocaleString());
@@ -249,6 +290,7 @@
 
     renderPreview(sched, valid);
     $("linkBox").textContent = link();
+    if (ci) renderCheckin(sched);
   }
 
   function renderPreview(sched, valid) {
@@ -264,6 +306,7 @@
         else if (d.kind === "off") c += "Off Day";
         else if (d.kind === "rest") c += "Rest / Review";
         else {
+          if (d.beforeReplan && !d.am.length) c += '<span class="line rv">Before re-plan</span>';
           d.am.forEach(x => c += '<span class="line c">AM: ' + P.esc(x.label) + "</span>");
           d.pm.forEach(x => c += '<span class="line c">PM: ' + P.esc(x.label) + "</span>");
           if (d.cars) c += '<span class="line cars">CARS: ' + P.esc(d.cars.task) + " (" + P.esc(d.cars.source) + ")</span>";
@@ -279,14 +322,140 @@
     t.innerHTML = h + "</tbody>";
   }
 
+  /* ---------- Check-in & re-plan ---------- */
+  let ci = null; // { progress, base, exported, dropped:Set, saved:bool }
+  function effectivePlan() {
+    if (!ci) return plan;
+    return P.replan(plan, ci.progress, { date: $("rpDate").value || P.iso(P.todayDn()), dropped: Array.from(ci.dropped) });
+  }
+  function contentLoad(sched, fromN, p) {
+    let days = 0, fls = 0;
+    for (const w of sched.weeks) for (const d of w.days) {
+      if (d.kind !== "study" || d.n < fromN) continue;
+      if (w.num <= p.contentWeeks) days++;
+      if (d.practice && d.practice.type === "fl") fls++;
+    }
+    return { days, fls };
+  }
+  function renderCheckin(after) {
+    const today = P.todayDn();
+    const fromN = P.dn($("rpDate").value) || today;
+    const base = ci.base;
+    const before = P.buildSchedule(base, 1);
+    const st = P.status(base, before, ci.progress, today);
+    const left = st.total - st.doneCount;
+    const bL = contentLoad(before, fromN, base), aL = contentLoad(after, fromN, plan);
+    const need = bL.days ? left / bL.days : null;
+    $("ciStatus").innerHTML =
+      '<div class="stat"><b>' + st.doneCount + " / " + st.total + "</b><span>Chapters done</span></div>" +
+      '<div class="stat"><b>' + (st.behind ? st.behind + " behind" : st.ahead ? st.ahead + " ahead" : "On track") + "</b><span>Against current plan</span></div>" +
+      '<div class="stat"><b>' + (st.pace == null ? "–" : st.pace.toFixed(1)) + "</b><span>Chapters / study day, last 2 wks</span></div>" +
+      '<div class="stat"><b>' + (need == null ? "–" : need.toFixed(1)) + "</b><span>Needed / day to finish on time</span></div>" +
+      '<div class="ci-missing">' + P.esc(base.name || "Client") + "’s backup from " + (ci.exported ? P.shortDate(P.dn(ci.exported)) : "an unknown date") +
+      (st.missing.length ? ". Not done yet: " + st.missing.slice(0, 6).map(m => P.esc(m.chapter.subject + " Ch. " + m.chapter.ch)).join(", ") + (st.missing.length > 6 ? ", and " + (st.missing.length - 6) + " more" : "") : "") + ".</div>";
+    const endOf = (s, p) => P.shortDate(Math.min(s.weeks.length ? s.D.week1Sun + p.contentWeeks * 7 - 1 : 0, s.D.test - 1));
+    const remA = after.totals.remaining;
+    const rows = [
+      ["Content review ends", endOf(before, base), endOf(after, plan)],
+      ["Chapters left", left, remA],
+      ["Content days left", bL.days, aL.days],
+      ["Chapters per study day", bL.days ? (left / bL.days).toFixed(1) : "Doesn't fit", aL.days ? (remA / aL.days).toFixed(1) : "Doesn't fit"],
+      ["Full lengths left", bL.fls, aL.fls],
+      ["Test date", P.longDate(P.dn(base.test)), P.longDate(P.dn(plan.test))]
+    ];
+    $("cmp").innerHTML = '<thead><tr><th></th><th class="r">Current plan</th><th class="r">After re-plan</th></tr></thead><tbody>' +
+      rows.map(r => "<tr><td>" + r[0] + '</td><td class="r">' + r[1] + '</td><td class="r' + (String(r[1]) !== String(r[2]) ? " chg" : "") + '">' + r[2] + "</td></tr>").join("") + "</tbody>";
+    $("dropCount").textContent = ci.dropped.size ? "(" + ci.dropped.size + " selected)" : "";
+    $("applyRp").disabled = !aL.days && remA > 0;
+    if ($("applyRp").disabled) $("rpMsg").textContent = "The remaining chapters don't fit: content review ends before the re-plan date. Extend content review or move the test date.";
+    else if (!ci.saved) $("rpMsg").textContent = "Not saved yet. The client link below updates after you save.";
+  }
+  function renderDropList() {
+    const done = new Set(Object.keys(ci.progress.ch));
+    const q = P.derive(ci.base).queue.filter(c => !done.has(c.id));
+    const bySubj = {};
+    q.forEach(c => (bySubj[c.subject] = bySubj[c.subject] || []).push(c));
+    $("dropList").innerHTML = Object.keys(bySubj).map(sj => '<div class="grp">' + P.esc(sj) + "</div>" +
+      bySubj[sj].sort((a, b) => a.ch - b.ch).map(c => '<label><input type="checkbox" data-drop="' + c.id + '"' + (ci.dropped.has(c.id) ? " checked" : "") + "><span>Ch. " + c.ch + ": " + P.esc(c.topic) + " <span class=\"hint\">(" + c.tier + ")</span></span></label>").join("")).join("");
+  }
+  $("backupFile").addEventListener("change", e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = () => {
+      try {
+        const obj = JSON.parse(r.result);
+        if (!obj || obj.app !== "project520" || !obj.plan) throw new Error("That file isn't a Project 520 backup.");
+        const base = P.normalizePlan(obj.plan);
+        ci = { progress: P.normProgress(obj.progress), base, exported: obj.exportedDay || (obj.exported || "").slice(0, 10), dropped: new Set(base.dropped || []), saved: false };
+        plan = P.normalizePlan(JSON.parse(JSON.stringify(base)));
+        fill(); renderOffs();
+        $("rpDate").value = P.iso(Math.max(P.todayDn(), P.dn(base.start)));
+        $("rpNote").value = "";
+        renderDropList();
+        $("ciBody").hidden = false; $("ciIntro").hidden = true;
+        document.querySelectorAll(".presets .btn").forEach(b => b.classList.toggle("on", b.dataset.preset === "absorb"));
+        update();
+        UI.toast("Loaded " + (base.name || "client") + "’s backup");
+      } catch (err) { UI.toast(err.message || "That file couldn't be read."); }
+      e.target.value = "";
+    };
+    r.readAsText(f);
+  });
+  document.querySelector(".presets").addEventListener("click", e => {
+    const b = e.target.closest("[data-preset]");
+    if (!b || !ci) return;
+    const k = b.dataset.preset, base = ci.base;
+    let cw = base.contentWeeks, test = base.test;
+    if (k === "cw1") cw += 1;
+    if (k === "cw2") cw += 2;
+    if (k === "t2") test = P.iso(P.dn(base.test) + 14);
+    if (k === "t4") test = P.iso(P.dn(base.test) + 28);
+    $("contentWeeks").value = String(Math.min(16, cw));
+    $("test").value = test;
+    document.querySelectorAll(".presets .btn").forEach(x => x.classList.toggle("on", x === b));
+    ci.saved = false; update();
+  });
+  $("dropList").addEventListener("change", e => {
+    const id = e.target.dataset.drop;
+    if (!id) return;
+    if (e.target.checked) ci.dropped.add(id); else ci.dropped.delete(id);
+    ci.saved = false; update();
+  });
+  $("rpDate").addEventListener("change", () => { ci.saved = false; update(); });
+  $("applyRp").addEventListener("click", () => {
+    if (!ci) return;
+    const today = P.todayDn();
+    const st = P.status(ci.base, P.buildSchedule(ci.base, 1), ci.progress, today);
+    const preset = document.querySelector(".presets .btn.on");
+    plan = P.replan(plan, ci.progress, {
+      date: $("rpDate").value, dropped: Array.from(ci.dropped), note: $("rpNote").value.trim(),
+      behind: st.behind, summary: (preset ? preset.textContent : "Custom") + (ci.dropped.size ? ", dropped " + ci.dropped.size : "")
+    });
+    ci.base = P.normalizePlan(JSON.parse(JSON.stringify(plan)));
+    ci.saved = true;
+    update();
+    $("rpMsg").textContent = "Re-plan saved. Copy the client link and send it; their logs and check-offs carry over.";
+    UI.toast("Re-plan saved");
+  });
+  $("closeCi").addEventListener("click", () => {
+    ci = null; $("ciBody").hidden = true; $("ciIntro").hidden = false; update();
+  });
+
   function openClient() {
     P.store.set(P.KEY_PLAN, plan);
     location.href = link();
   }
 
   fill(); renderOffs(); update();
-  document.querySelector(".cp").addEventListener("input", e => { if (e.target.id !== "loadLink" && e.target.id !== "offDate") update(); });
-  document.querySelector(".cp").addEventListener("change", e => { if (e.target.id !== "loadLink" && e.target.id !== "offDate") update(); });
+  const SKIP = new Set(["loadLink", "offDate", "backupFile", "rpNote", "rpDate"]);
+  function onEdit(e) {
+    if (SKIP.has(e.target.id) || e.target.dataset.drop) return;
+    if (ci) ci.saved = false;
+    update();
+  }
+  document.querySelector(".cp").addEventListener("input", onEdit);
+  document.querySelector(".cp").addEventListener("change", onEdit);
   $("addOff").addEventListener("click", () => {
     const v = $("offDate").value;
     if (!v || plan.offDays.includes(v)) return;

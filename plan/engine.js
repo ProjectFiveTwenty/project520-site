@@ -49,7 +49,12 @@
       { q: 59, b: 1, aligned: false }
     ],
     carsP4: [true, false, false, true, false, true, false],   // 3 days
-    carsP57: [false, false, false, true, false, true, false]  // 2 days
+    carsP57: [false, false, false, true, false, true, false], // 2 days
+    // Re-planning (coach only). baseline: from this date on, schedule only the chapters not
+    // in baseline.done. dropped: chapters removed from the plan. history: past re-plans.
+    baseline: null,              // { date: "2026-10-20", done: ["gc-1", ...] }
+    dropped: [],
+    history: []                  // [{ date, note, behind, summary }]
   };
 
   function normalizePlan(p) {
@@ -57,6 +62,9 @@
     const out = Object.assign(base, p || {});
     out.contentWeeks = Math.max(1, Math.min(20, parseInt(out.contentWeeks, 10) || 8));
     out.offDays = (out.offDays || []).filter(Boolean).sort();
+    out.dropped = Array.isArray(out.dropped) ? out.dropped : [];
+    out.history = Array.isArray(out.history) ? out.history : [];
+    if (out.baseline && !out.baseline.date) out.baseline = null;
     if (!out.id) out.id = makeId();
     return out;
   }
@@ -175,11 +183,23 @@
 
     // Smoothed distribution: each content day gets an even share of chapters
     // (AM first, then PM), so no day has an empty AM slot next to a filled PM.
+    // With a re-plan baseline, days before its date keep nothing new, and the chapters not
+    // yet done (minus any dropped) are spread evenly over the content days from that date on.
     const N = queue.length;
+    const skip = new Set(plan.dropped || []);
+    const R = plan.baseline ? Math.max(dn(plan.baseline.date), start) : null;
+    if (R != null) (plan.baseline.done || []).forEach(id => skip.add(id));
+    const pool = queue.filter(c => !skip.has(c.id));
+    let firstSd = 1;
+    if (R != null) for (let n = start; n < R; n++) if (isStudyDate(n) && !offSet.has(n)) firstSd++;
+    const poolDays = Math.max(0, totalContentDays - (firstSd - 1));
+    const PN = pool.length;
     function chaptersForDay(sd) {
-      const from = Math.round((sd - 1) * N / totalContentDays);
-      const to = Math.round(sd * N / totalContentDays);
-      const list = queue.slice(from, Math.min(to, N));
+      const k = sd - firstSd + 1;
+      if (k < 1 || k > poolDays) return { am: [], pm: [] };
+      const from = Math.round((k - 1) * PN / poolDays);
+      const to = Math.round(k * PN / poolDays);
+      const list = pool.slice(from, Math.min(to, PN));
       const amN = Math.ceil(list.length / 2);
       return { am: list.slice(0, amN), pm: list.slice(amN) };
     }
@@ -212,6 +232,7 @@
 
         // Content (AM / PM)
         day.am = []; day.pm = [];
+        if (R != null && n < R) day.beforeReplan = true;
         if (w <= cw && day.studyDay >= 1 && day.studyDay <= totalContentDays) {
           const ch = chaptersForDay(day.studyDay);
           day.am = ch.am; day.pm = ch.pm;
@@ -239,7 +260,67 @@
       }
       weeks.push({ num: w, days, phase: w <= cw ? "content" : "practice", anyInRange });
     }
-    return { weeks, D, totals: { qs: totalQs, fls, contentDays: totalContentDays, chapters: N } };
+    const contentDaysLeft = R != null ? poolDays : totalContentDays;
+    return { weeks, D, totals: {
+      qs: totalQs, fls, contentDays: totalContentDays, chapters: N - (plan.dropped || []).length,
+      remaining: PN, contentDaysLeft, perDayLeft: contentDaysLeft ? PN / contentDaysLeft : Infinity,
+      unplaced: contentDaysLeft ? 0 : PN, contentEnd, replanDate: R
+    } };
+  }
+
+  /* ---------- Progress (what the client has done) ---------- */
+  // progress = { ch: { "gc-5": "2026-10-12", ... }, items: { "2026-10-12:p": true } }
+  function emptyProgress() { return { ch: {}, items: {} }; }
+  function normProgress(p) { p = p || {}; return { ch: p.ch || {}, items: p.items || {} }; }
+
+  // Where the client stands against the schedule as of `today`.
+  function status(plan, sched, progress, today) {
+    progress = normProgress(progress);
+    const dropped = new Set(plan.dropped || []);
+    const done = new Set(Object.keys(progress.ch).filter(id => !dropped.has(id)));
+    const due = new Map(); // id -> scheduled day number, for chapters due before today
+    if (plan.baseline) (plan.baseline.done || []).forEach(id => due.set(id, null));
+    let ahead = 0;
+    const todayList = [];
+    const byId = {};
+    for (const w of sched.weeks) for (const d of w.days) {
+      if (d.kind !== "study") continue;
+      for (const c of d.am.concat(d.pm)) {
+        byId[c.id] = c;
+        if (d.n < today) due.set(c.id, d.n);
+        else if (d.n === today) todayList.push(c);
+        else if (done.has(c.id)) ahead++;
+      }
+    }
+    const missing = [];
+    due.forEach((n, id) => { if (!done.has(id) && !dropped.has(id) && byId[id]) missing.push({ chapter: byId[id], n }); });
+    missing.sort((a, b) => (a.n || 0) - (b.n || 0));
+    // Pace: chapters finished per study day over the last 14 days
+    const D = sched.D;
+    let studyDays14 = 0;
+    for (let n = today - 14; n < today; n++) if (n >= D.start && D.studyDays[wd(n)] && !D.offSet.has(n)) studyDays14++;
+    let done14 = 0;
+    Object.values(progress.ch).forEach(dIso => { const n = dn(dIso); if (n >= today - 14 && n < today) done14++; });
+    const total = sched.totals.chapters;
+    return {
+      doneCount: done.size, total, behind: missing.length, missing, ahead,
+      dueToday: todayList.filter(c => !done.has(c.id)).length,
+      pace: studyDays14 ? done14 / studyDays14 : null, studyDays14, done14,
+      state: missing.length ? "behind" : ahead ? "ahead" : "ontrack"
+    };
+  }
+
+  // Coach re-plan. Returns a new plan; the client keeps the same ID and logs.
+  // opts: { date (ISO, first day of the new layout), dropped: [ids], contentWeeks, test, note, summary, behind }
+  function replan(plan, progress, opts) {
+    progress = normProgress(progress);
+    const p = normalizePlan(JSON.parse(JSON.stringify(plan)));
+    p.baseline = { date: opts.date, done: Object.keys(progress.ch).sort() };
+    p.dropped = (opts.dropped || []).slice().sort();
+    if (opts.contentWeeks) p.contentWeeks = opts.contentWeeks;
+    if (opts.test) p.test = opts.test;
+    p.history = (p.history || []).concat([{ date: iso(todayDn()), from: opts.date, note: opts.note || "", behind: opts.behind || 0, summary: opts.summary || "" }]);
+    return p;
   }
 
   /* ---------- Anki search (EZ Anki Tags format) ---------- */
@@ -269,12 +350,18 @@
   const KEY_COACH = "p520.coachDraft";
   const keyCars = id => "p520.cars." + id;
   const keyFL = id => "p520.fl." + id;
+  const keyProgress = id => "p520.progress." + id;
+  const loadProgress = id => normProgress(store.get(keyProgress(id), null));
+  const saveProgress = (id, p) => store.set(keyProgress(id), p);
 
   // The client's plan: from the link (#p=...) if present, else the saved copy.
   function loadClientPlan() {
     const m = /[#&]p=([^&]+)/.exec(location.hash || "");
     if (m) {
       const p = decodePlan(m[1]);
+      const prev = store.get(KEY_PLAN, null);
+      // An older link (e.g. a bookmark) never replaces a newer plan the coach already sent.
+      if (p && prev && prev.id === p.id && (prev.rev || 0) > (p.rev || 0)) return normalizePlan(prev);
       if (p) { store.set(KEY_PLAN, p); return p; }
     }
     const saved = store.get(KEY_PLAN, null);
@@ -284,7 +371,7 @@
 
   /* ---------- Backup (export / import of a client's logs) ---------- */
   function exportData(plan) {
-    return { app: "project520", exported: new Date().toISOString(), plan, cars: store.get(keyCars(plan.id), []), fl: store.get(keyFL(plan.id), []) };
+    return { app: "project520", exported: new Date().toISOString(), exportedDay: iso(todayDn()), plan, cars: store.get(keyCars(plan.id), []), fl: store.get(keyFL(plan.id), []), progress: loadProgress(plan.id) };
   }
   function importData(obj) {
     if (!obj || obj.app !== "project520" || !obj.plan) throw new Error("That file isn't a Project 520 backup.");
@@ -292,6 +379,7 @@
     store.set(KEY_PLAN, plan);
     store.set(keyCars(plan.id), obj.cars || []);
     store.set(keyFL(plan.id), obj.fl || []);
+    store.set(keyProgress(plan.id), normProgress(obj.progress));
     return plan;
   }
   function downloadJSON(filename, data) {
@@ -341,7 +429,8 @@
     DEFAULT_PLAN, normalizePlan, encodePlan, decodePlan, derive, buildSchedule, makeId,
     CARS_PHASES, CARS_SOURCES, carsRowPasses, carsProgress,
     FL_SOURCES, FL_SECTIONS, ankiQuery,
-    store, KEY_PLAN, KEY_COACH, keyCars, keyFL, loadClientPlan, planLinkSuffix,
+    store, KEY_PLAN, KEY_COACH, keyCars, keyFL, keyProgress, loadProgress, saveProgress, loadClientPlan, planLinkSuffix,
+    emptyProgress, normProgress, status, replan,
     exportData, importData, downloadJSON, esc, copyText, initTheme
   };
 })();

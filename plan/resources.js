@@ -375,12 +375,16 @@
   };
 
   const TIER = { I: "Intro", M: "Intermediate", A: "Advanced" };
+  // Short, stable chapter IDs (e.g. "gc-5") used to record progress. Don't change these
+  // when re-ordering chapters; order lives in the three order numbers.
+  const CODE = { "General Chemistry": "gc", "Physics": "ph", "Organic Chemistry": "oc", "Biochemistry": "bc", "Biology": "bio", "Behavioral": "ps" };
   const RESOURCES = {};
   for (const [key, r] of Object.entries(RAW)) {
     const chapters = [];
     for (const [subject, rows] of r.subjects) {
       for (const [ch, topic, tier, classic, integrated, hybrid, tag] of rows) {
         chapters.push({
+          id: CODE[subject] + "-" + ch,
           subject, ch, topic, tier: TIER[tier],
           order: { Classic: classic, Integrated: integrated, Hybrid: hybrid },
           label: subject + " Ch. " + ch + ": " + topic,
