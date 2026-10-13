@@ -16,7 +16,7 @@
   const flLog = P.store.get(P.keyFL(plan.id), []);
   const carsDates = new Set(carsLog.map(r => r.date));
   const cars = P.carsProgress(carsLog);
-  const sched = P.buildSchedule(plan, cars.active);
+  const sched = P.buildSchedule(plan, P.carsPhaseByDay(carsLog, P.todayDn()));
   const today = P.todayDn();
   const D = sched.D;
   const daysLeft = D.test - today;
@@ -211,10 +211,11 @@
       const carsDays = study.filter(d => d.cars);
       if (carsDays.length) {
         const logged = carsLog.filter(r => { const n = P.dn(r.date); return n >= w.days[0].n && n <= w.days[6].n; }).length;
-        const prefNote = cars.active >= 4 ? " on " + carsDays.map(d => P.DOW3[d.col]).join(", ") : "";
+        const wc = carsDays[carsDays.length - 1].cars; // this week's phase (past weeks keep theirs)
+        const prefNote = wc.phase >= 4 ? " on " + carsDays.map(d => P.DOW3[d.col]).join(", ") : "";
         right += '<h3><span>CARS</span><span class="ct">' + Math.min(logged, carsDays.length) + " of " + carsDays.length + " logged</span></h3>" +
-          '<div class="task"><span class="kind k-cars">Phase ' + cars.active + '</span><div class="what">' + plural(carsDays.length, "session", "sessions") + prefNote + ": " + P.esc(carsDays[0].cars.task) +
-          '</div><div class="sub">' + P.esc(carsDays[0].cars.source) + ' · <a href="cars.html">Log a session</a></div></div>';
+          '<div class="task"><span class="kind k-cars">Phase ' + wc.phase + '</span><div class="what">' + plural(carsDays.length, "session", "sessions") + prefNote + ": " + P.esc(wc.task) +
+          '</div><div class="sub">' + P.esc(wc.source) + ' · <a href="cars.html">Log a session</a></div></div>';
       }
       const notes = [];
       if (study.length) notes.push("Every study day: Anki reviews" + (carsDays.length ? " and CARS when scheduled" : "") + ".");

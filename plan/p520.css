@@ -16,7 +16,8 @@
   --amber: #a8650d;
   --amber-soft: #fbf1e2;
   --rose: #c0392b;
-  --sky: #0a83bf;
+  --content: #1d3a9e;
+  --sky: #0389cc;
   --sky-soft: #e4f4fc;
   --purple: #7a3fd6;
   --purple-soft: #f1eafd;
@@ -33,7 +34,7 @@
     --accent: #7ba6ff; --accent-hover: #9bbcff; --accent-ink: #11161c; --accent-soft: #1b2638;
     --green: #3fc590; --green-soft: #15291f; --amber: #f0b45a; --amber-soft: #2b2112;
     --rose: #ff8a7a; --rose-soft: #301a18;
-    --sky: #6cc8f2; --sky-soft: #132a36; --purple: #b99bff; --purple-soft: #261d3a; --today: #7ba6ff; color-scheme: dark;
+    --content: #6f8ff7; --sky: #8ad8fb; --sky-soft: #132a36; --purple: #b99bff; --purple-soft: #261d3a; --today: #7ba6ff; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
@@ -41,7 +42,7 @@
   --accent: #7ba6ff; --accent-hover: #9bbcff; --accent-ink: #11161c; --accent-soft: #1b2638;
   --green: #3fc590; --green-soft: #15291f; --amber: #f0b45a; --amber-soft: #2b2112;
   --rose: #ff8a7a; --rose-soft: #301a18;
-    --sky: #6cc8f2; --sky-soft: #132a36; --purple: #b99bff; --purple-soft: #261d3a; --today: #7ba6ff; color-scheme: dark;
+    --content: #6f8ff7; --sky: #8ad8fb; --sky-soft: #132a36; --purple: #b99bff; --purple-soft: #261d3a; --today: #7ba6ff; color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -134,7 +135,7 @@ table.data input { padding: 6px 8px; }
 /* task-kind markers */
 .kind { font: 700 0.68rem/1 var(--font-head); letter-spacing: 0.07em; text-transform: uppercase; display: inline-flex; align-items: center; gap: 5px; }
 .kind::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex: none; }
-.k-content { color: var(--accent); }
+.k-content { color: var(--content); }
 .k-cars { color: var(--sky); }
 .k-qbank { color: var(--green); }
 .k-fl { color: var(--purple); }

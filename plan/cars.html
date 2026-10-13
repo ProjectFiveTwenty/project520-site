@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400&display=swap">
-<link rel="stylesheet" href="p520.css?v=20261013c">
+<link rel="stylesheet" href="p520.css?v=20261013f">
 <style>
   .layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr); gap: 20px; align-items: start; }
   .ladder { list-style: none; margin: 0; padding: 0; display: grid; }
@@ -41,16 +41,16 @@
     <div>
       <div class="tagline">CARS performance tracker</div>
       <h1>Mastery-driven progression</h1>
-      <p class="lede">Log every CARS session. When you clear a phase's bar, the next phase unlocks and your calendar's CARS assignments change to match.</p>
+      <p class="lede">Log every CARS session. When you meet a phase's requirements, the next phase unlocks and your calendar's CARS assignments update.</p>
     </div>
   </div>
   <div id="content"></div>
 </main>
 
-<script src="anki-tags.js?v=20261013c"></script>
-<script src="resources.js?v=20261013c"></script>
-<script src="engine.js?v=20261013c"></script>
-<script src="ui.js?v=20261013c"></script>
+<script src="anki-tags.js?v=20261013f"></script>
+<script src="resources.js?v=20261013f"></script>
+<script src="engine.js?v=20261013f"></script>
+<script src="ui.js?v=20261013f"></script>
 <script>
 (function () {
   const P = window.P520, UI = window.P520UI;
@@ -78,7 +78,7 @@
     '<div class="field wide"><p class="hint" id="formMsg" role="status"></p><div><button class="btn" type="submit">Add to log</button></div></div>' +
     "</form></section>" +
     '<section class="panel"><div class="row-between" style="margin-bottom:10px"><h2 style="margin:0">Passage log</h2><span class="hint" id="logCount"></span></div>' +
-    '<div class="table-scroll"><table class="data"><thead><tr><th>Date</th><th>Source</th><th>Phase</th><th class="r">Passages</th><th class="r">Min / passage</th><th class="r">Accuracy</th><th>Met bar</th><th></th></tr></thead><tbody id="logBody"></tbody></table></div>' +
+    '<div class="table-scroll"><table class="data"><thead><tr><th>Date</th><th>Source</th><th>Phase</th><th class="r">Passages</th><th class="r">Min / passage</th><th class="r">Accuracy</th><th>Result</th><th></th></tr></thead><tbody id="logBody"></tbody></table></div>' +
     '<p class="hint" id="logEmpty" style="margin-top:12px">No sessions yet. Your first entries count toward Phase 1.</p>' +
     "</section></div></div>";
 
@@ -108,7 +108,7 @@
       const per = r.passages ? (r.minutes / r.passages).toFixed(1) : "–";
       return "<tr><td class=\"num\">" + P.esc(r.date) + "</td><td>" + P.esc(r.source) + "</td><td>" + r.phase + ". " + P.esc(P.CARS_PHASES[r.phase - 1].name) + "</td>" +
         '<td class="r">' + r.passages + '</td><td class="r">' + per + '</td><td class="r">' + acc + "</td>" +
-        "<td>" + (ok ? '<span class="ok">✓ Yes</span>' : '<span class="bad">✗ No</span>') + "</td>" +
+        "<td>" + (ok ? '<span class="ok">✓ Met</span>' : '<span class="bad">✗ Not met</span>') + "</td>" +
         '<td><button class="del" type="button" data-i="' + i + '" aria-label="Delete entry from ' + P.esc(r.date) + '">Delete</button></td></tr>';
     }).join("");
     $("logEmpty").hidden = log.length > 0;
@@ -131,7 +131,7 @@
     msg.textContent = "";
     ["fPass", "fMin", "fQ", "fC"].forEach(id => $(id).value = "");
     render();
-    UI.toast(after > before ? "Phase " + after + " unlocked. Your calendar is updated." : P.carsRowPasses(r) ? "Logged. That session met the bar." : "Logged. That session didn't meet this phase's bar.");
+    UI.toast(after > before ? "Phase " + after + " unlocked. Your calendar is updated." : P.carsRowPasses(r) ? "Logged. That session met the requirements." : "Logged. That session didn't meet this phase's requirements.");
   });
   $("logBody").addEventListener("click", e => {
     const b = e.target.closest(".del");

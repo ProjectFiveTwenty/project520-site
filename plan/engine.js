@@ -154,6 +154,17 @@
     else if (p[6] < 2) active = 6;
     return { counts: p, active };
   }
+  // Phase for each calendar day: sessions logged before a day decide that day's phase;
+  // today and later use the current phase.
+  function carsPhaseByDay(log, today) {
+    const current = carsProgress(log).active;
+    const cache = new Map();
+    return n => {
+      if (n >= today) return current;
+      if (!cache.has(n)) { const d = iso(n); cache.set(n, carsProgress((log || []).filter(r => r.date && r.date < d)).active); }
+      return cache.get(n);
+    };
+  }
   function carsTask(phase, source) {
     switch (phase) {
       case 1: return "1 passage, untimed";
@@ -175,7 +186,9 @@
     const weeks = [];
     if (start == null || test == null || test < start || !daysPerWk) return { weeks, D, totals: { qs: 0, fls: 0, contentDays: 0 } };
     const cw = plan.contentWeeks;
-    const phase = carsPhase || 1;
+    // carsPhase is a phase number, or a function (day number -> phase) so past days keep
+    // the phase that was active on that day.
+    const phaseOn = typeof carsPhase === "function" ? carsPhase : () => (carsPhase || 1);
 
     // Off days only cost a study day when they land on one (fixes the sheet counting
     // off days that fall on rest days, which repeated a day's chapters).
@@ -247,6 +260,7 @@
 
         // CARS
         const source = w >= aamcStartWk ? "AAMC" : "Jack Westin";
+        const phase = phaseOn(n);
         const carsDay = phase <= 3 ? true : phase === 4 ? !!plan.carsP4[c] : !!plan.carsP57[c];
         day.cars = carsDay ? { phase, source: phase === 7 && source === "AAMC" ? "AAMC / FLs" : source, task: carsTask(phase) } : null;
 
@@ -355,7 +369,7 @@
     if (!sched.weeks.length) return out;
     const done = new Set(Object.keys(progress.ch));
     const st = status(plan, sched, progress, today);
-    // Chapter milestones: halfway through content review, and content review complete
+    // Chapter milestone: content review complete
     const placedByDay = [];
     for (const w of sched.weeks) for (const d of w.days) if (d.kind === "study" && d.am && (d.am.length || d.pm.length)) placedByDay.push([d.n, d.am.concat(d.pm)]);
     const baseDone = plan.baseline ? (plan.baseline.done || []) : [];
@@ -372,7 +386,6 @@
       out.push({ key, label, n: untilN, status, detail });
     }
     const list = t.contentDayList || [];
-    if (list.length > 3) chapterMilestone("half", "Halfway through content review", list[Math.ceil(list.length / 2) - 1]);
     if (list.length) chapterMilestone("content", "Content review complete", list[list.length - 1]);
     // Goal score, judged on the average of the last 3 complete full lengths
     if (plan.target) {
@@ -532,7 +545,7 @@
   window.P520 = {
     dn, iso, wd, md, longDate, shortDate, todayDn, DOW, DOW3,
     DEFAULT_PLAN, normalizePlan, encodePlan, decodePlan, derive, buildSchedule, makeId,
-    CARS_PHASES, CARS_SOURCES, carsRowPasses, carsProgress,
+    CARS_PHASES, CARS_SOURCES, carsRowPasses, carsProgress, carsPhaseByDay,
     FL_SOURCES, FL_SECTIONS, ankiQuery, DECKS, deckLabel, chapterTag, deckCoverage,
     store, KEY_PLAN, KEY_COACH, keyCars, keyFL, keyProgress, loadProgress, saveProgress, loadClientPlan, planLinkSuffix,
     emptyProgress, normProgress, status, replan, milestones, MILESTONE_LABEL, hasCoach, finalStretchText,
