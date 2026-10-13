@@ -37,9 +37,8 @@
   head.innerHTML =
     '<div><div class="tagline">' + VIEW_NAME[view] + "</div>" +
     "<h1>" + (plan.name ? P.esc(plan.name) + "’s MCAT plan" : "Your MCAT plan") + "</h1>" +
-    '<p class="lede">Test day is ' + P.longDate(D.test) + ". " +
-    (daysLeft > 1 ? daysLeft + " days to go." : daysLeft === 1 ? "That's tomorrow." : daysLeft === 0 ? "That's today. Good luck." : "") +
-    " Content review uses " + P.esc(D.res ? D.res.label : "") + "; practice questions use " + P.esc(plan.qbank) + "." +
+    '<p class="lede">Test day is ' + P.longDate(D.test) +
+    (daysLeft > 1 ? " · " + daysLeft + " days to go." : daysLeft === 1 ? " · tomorrow." : daysLeft === 0 ? " · today. Good luck." : ".") +
     (view === "weekly" ? " Each week lists what to finish; you choose which day to do each item." : "") +
     (view === "phase" ? " Work through each phase in the order that suits you, and keep an eye on the milestones." : "") + "</p></div>" +
     '<div class="stats">' +
@@ -72,11 +71,8 @@
     let html;
     if (today < D.start) html = '<span class="pill locked">Not started</span><span>Your plan starts ' + P.longDate(D.start) + ".</span>";
     else if (st.state === "behind") {
-      const names = st.missing.slice(0, 3).map(m => P.esc(m.chapter.subject) + " Ch. " + m.chapter.ch).join(", ");
-      const what = view === "phase" ? "To catch up, finish " + plural(st.behind, "more chapter", "more chapters") + ", e.g. " + names :
-        "Not checked off yet: " + names + (st.behind > 3 ? ", and " + (st.behind - 3) + " more" : "");
       html = '<span class="pill miss">' + plural(st.behind, "chapter", "chapters") + " behind</span>" +
-        "<span>" + what + ". Check them off as you catch up" + (P.hasCoach(plan) ? ", and tell your coach if you can't catch up this week" : "") + ".</span>";
+        "<span>Check off chapters as you catch up" + (P.hasCoach(plan) ? ", and tell your coach if you can't catch up this week" : "") + ".</span>";
     } else if (st.state === "ahead") html = '<span class="pill done">' + plural(st.ahead, "chapter", "chapters") + " ahead</span><span>Nice work. You're ahead of the plan.</span>";
     else {
       let msg = "Every chapter due so far is checked off.";
@@ -129,7 +125,6 @@
     const isNow = inPlan && w.num === currentWeek;
     return '<div class="week-head"><h2>Week ' + w.num + "</h2>" +
       '<span class="range">' + P.shortDate(w.days[0].n) + " – " + P.shortDate(w.days[6].n) + "</span>" +
-      '<span class="phase">' + (w.phase === "content" ? "Content review" : "Practice & full lengths") + "</span>" +
       (isNow ? '<span class="pill now">This week</span>' : "") + (extra || "") + "</div>";
   }
 

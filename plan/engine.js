@@ -374,22 +374,6 @@
     const list = t.contentDayList || [];
     if (list.length > 3) chapterMilestone("half", "Halfway through content review", list[Math.ceil(list.length / 2) - 1]);
     if (list.length) chapterMilestone("content", "Content review complete", list[list.length - 1]);
-    // CARS phases: Endurance (Phase 4) by the end of content review, Full Section (Phase 6) two weeks before test
-    function carsMilestone(key, phaseN, byN) {
-      const ph = CARS_PHASES[phaseN - 1];
-      let status, detail;
-      const a = carsActive || 1;
-      if (a >= phaseN) { status = "done"; detail = "Reached"; }
-      else if (today > byN) { status = "missed"; detail = "Now in Phase " + a; }
-      else {
-        const weeksLeft = Math.max(0, (byN - today) / 7);
-        status = (phaseN - a) > weeksLeft + 0.5 ? "atrisk" : "ontrack";
-        detail = "Now in Phase " + a + " · about " + Math.round(weeksLeft) + (Math.round(weeksLeft) === 1 ? " week" : " weeks") + " left";
-      }
-      out.push({ key, label: "CARS Phase " + phaseN + ": " + ph.name, n: byN, status, detail });
-    }
-    if (list.length) carsMilestone("cars4", 4, list[list.length - 1]);
-    carsMilestone("cars6", 6, D.test - 14);
     // Goal score, judged on the average of the last 3 complete full lengths
     if (plan.target) {
       const full = (flLog || []).filter(r => r.scaled && FL_SECTIONS.every(s => r.scaled[s.key])).sort((x, y) => (x.date || "").localeCompare(y.date || ""));
