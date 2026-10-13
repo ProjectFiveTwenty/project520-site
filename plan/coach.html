@@ -1,0 +1,542 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Project 520 Control Panel</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400&display=swap">
+<link rel="stylesheet" href="p520.css?v=20261012c">
+<style>
+  .cp { display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); gap: 20px; align-items: start; }
+  .side { display: grid; gap: 16px; }
+  .side .panel + .panel { margin-top: 0; }
+  .stack { display: grid; gap: 14px; min-width: 0; }
+  .stack > *, .side > * { min-width: 0; }
+  .offs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .off-tag { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: 999px; padding: 4px 6px 4px 10px; font-size: 0.85rem; }
+  .off-tag button { border: 0; background: var(--soft); color: var(--muted); border-radius: 50%; width: 20px; height: 20px; cursor: pointer; line-height: 1; }
+  .off-tag button:hover { color: var(--rose); }
+  .inline { display: flex; gap: 8px; }
+  .inline > :first-child { flex: 1; }
+  .qt input[type="number"] { width: 72px; }
+  .qt td, .qt th { padding: 6px 6px; }
+  .warn { color: var(--rose); font-size: 0.82rem; margin: 6px 0 0; }
+  .derived { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  .derived .stat { min-width: 0; }
+  .link-box { font: 400 0.78rem/1.4 var(--font-mono); background: var(--soft); border: 1px solid var(--line); border-radius: 8px; padding: 10px; word-break: break-all; max-height: 92px; overflow-y: auto; }
+
+  /* compact schedule preview, laid out like the sheet's Schedule tab */
+  .pv-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+  table.pv { border-collapse: collapse; width: 100%; min-width: 860px; font-size: 0.76rem; line-height: 1.3; }
+  table.pv th { position: sticky; top: 0; background: var(--soft); font: 700 0.7rem/1 var(--font-head); letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); padding: 8px 6px; text-align: left; border-bottom: 1px solid var(--line); }
+  table.pv td { vertical-align: top; padding: 7px 6px; border-bottom: 1px solid var(--line); border-left: 1px solid var(--line); width: 13.5%; }
+  table.pv td.wk { border-left: 0; width: 5.5%; font: 700 0.76rem/1.2 var(--font-head); white-space: nowrap; }
+  table.pv td.wk span { display: block; font: 500 0.66rem/1.3 var(--font-body); color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  .pv .d { font-weight: 700; font-variant-numeric: tabular-nums; margin-bottom: 3px; }
+  .pv .c { color: var(--accent); }
+  .pv .cars { color: var(--amber); }
+  .pv .qb { color: var(--green); }
+  .pv .fl { color: var(--rose); font-weight: 600; }
+  .pv .rv { color: var(--muted); }
+  .pv td.rest, .pv td.off, .pv td.open { background: var(--soft); color: var(--muted); }
+  .pv td.test { background: var(--accent-soft); color: var(--accent); font-weight: 700; }
+  .pv td.none { background: transparent; }
+  .pv .line { display: block; overflow-wrap: anywhere; }
+
+  .presets { display: flex; flex-wrap: wrap; gap: 6px; }
+  .presets .btn.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+  .ci-status { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  .ci-status .stat { min-width: 0; }
+  .ci-missing { grid-column: 1 / -1; font-size: 0.88rem; color: var(--muted); }
+  details.drop { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+  details.drop summary { cursor: pointer; font-weight: 600; }
+  .drop-list { columns: 2 240px; column-gap: 18px; margin-top: 10px; font-size: 0.86rem; }
+  .drop-list label { display: flex; gap: 7px; align-items: flex-start; break-inside: avoid; padding: 3px 0; }
+  .drop-list .grp { font: 700 0.72rem/1.2 var(--font-head); letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); margin: 8px 0 2px; break-after: avoid; }
+  table.cmp td.chg { font-weight: 700; }
+  textarea { resize: vertical; }
+  .pv td.past { color: var(--muted); font-style: italic; }
+  .pv td.cu { background: var(--green-soft); }
+  @media (max-width: 1100px) { .cp { grid-template-columns: 1fr; } }
+  @media (max-width: 640px) { .ci-status { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 640px) { .derived { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+</style>
+</head>
+<body>
+<header class="nav">
+  <div class="wrap">
+    <span class="brand">PROJECT 520<small>Coach control panel</small></span>
+    <nav class="nav-links" aria-label="Coach tools">
+      <button class="btn btn-plain btn-sm" id="newBtn" type="button">New client</button>
+      <button class="btn btn-sm" id="openClient" type="button">Open client view</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="page-head">
+    <div>
+      <div class="tagline">Control panel</div>
+      <h1 id="title">Build a study plan</h1>
+      <p class="lede">Set the client's dates, resources and preferences. The preview updates as you go. Send the client link when it looks right; resending an updated link keeps their CARS and score logs.</p>
+    </div>
+  </div>
+
+  <div class="cp">
+    <div class="side">
+      <section class="panel stack">
+        <h2>Client</h2>
+        <div class="grid2">
+          <div class="field"><label for="name">Name</label><input id="name" type="text" autocomplete="off" placeholder="First name"></div>
+          <div class="field"><label for="target">Goal score</label><input id="target" type="number" min="472" max="528" placeholder="e.g. 515"></div>
+        </div>
+        <div class="field"><label for="tier">Plan tier</label>
+          <select id="tier"><option value="core">Core (one-time plan, no coach check-ins)</option><option value="coaching">Coaching (monthly, with check-ins)</option></select>
+          <p class="hint">Core plans never mention a coach on the client's pages.</p></div>
+        <div class="grid2">
+          <div class="field"><label for="start">Prep start date</label><input id="start" type="date"></div>
+          <div class="field"><label for="test">Test date</label><input id="test" type="date"></div>
+        </div>
+      </section>
+
+      <section class="panel stack">
+        <h2>Plan style</h2>
+        <div class="field"><label for="view">How the client sees the plan</label>
+          <select id="view">
+            <option value="daily">Daily: a set list for each day</option>
+            <option value="weekly">Weekly: a checklist per week, client picks the day</option>
+            <option value="phase">Phase: milestones and goals, client sets the pace</option>
+          </select>
+          <p class="hint" id="viewHint"></p></div>
+        <div class="field"><label for="catchUp">Weekly catch-up day</label>
+          <select id="catchUp"></select>
+          <p class="hint">A study day with no new chapters, for finishing anything left over. Practice and CARS stay as scheduled.</p></div>
+        <div class="field"><label for="finalNote">Final stretch note</label>
+          <textarea id="finalNote" rows="2" placeholder=""></textarea>
+          <p class="hint" id="finalHint"></p></div>
+      </section>
+
+      <section class="panel stack">
+        <h2>Content review</h2>
+        <div class="grid2">
+          <div class="field"><label for="resource">Primary resource</label>
+            <select id="resource"><option value="kaplan">Kaplan</option><option value="uworld">UWorld</option><option value="khanacademy">Khan Academy</option></select></div>
+          <div class="field"><label for="structure">Schedule structure</label>
+            <select id="structure"><option>Classic</option><option>Integrated</option><option>Hybrid</option></select></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label for="contentWeeks">Content review weeks</label><select id="contentWeeks"></select></div>
+          <div class="field"><label for="qbank">Question bank</label>
+            <select id="qbank"><option>UWorld</option><option>Kaplan</option><option>Blueprint</option><option>ExamKrackers</option><option>Princeton Review</option><option>Altius</option></select></div>
+        </div>
+        <div class="field"><span class="label">Study days</span><div class="chips" id="studyDays"></div></div>
+        <div class="field">
+          <label for="offDate">Scheduled off days</label>
+          <div class="inline"><input id="offDate" type="date"><button class="btn btn-plain" id="addOff" type="button">Add</button></div>
+          <div class="offs" id="offList"></div>
+        </div>
+      </section>
+
+      <section class="panel stack">
+        <h2>Question bank ramp</h2>
+        <p class="hint">Rows 1–4 spread across the content weeks; after that the ramp moves one row per week, up to row 8.</p>
+        <div class="table-scroll"><table class="data qt"><thead><tr><th>#</th><th>Qs / block</th><th>Blocks / day</th><th>Aligned</th><th class="r">Qs / week</th></tr></thead><tbody id="qtBody"></tbody></table></div>
+      </section>
+
+      <section class="panel stack">
+        <h2>CARS preference days</h2>
+        <div class="field"><span class="label">Phase 4 (3 days)</span><div class="chips" id="carsP4"></div><p class="warn" id="p4warn" hidden></p></div>
+        <div class="field"><span class="label">Phases 5–7 (2 days)</span><div class="chips" id="carsP57"></div><p class="warn" id="p57warn" hidden></p></div>
+        <p class="hint">Phases 1–3 put CARS on every study day.</p>
+      </section>
+
+      <section class="panel stack">
+        <h2>Client link</h2>
+        <div class="link-box" id="linkBox"></div>
+        <div class="inline" style="flex-wrap:wrap"><button class="btn" id="copyLink" type="button">Copy link</button><button class="btn btn-plain" id="openClient2" type="button">Open client view</button></div>
+        <div class="field"><label for="loadLink">Edit an existing client</label>
+          <div class="inline"><input id="loadLink" type="text" placeholder="Paste their client link"><button class="btn btn-plain" id="loadBtn" type="button">Load</button></div>
+          <p class="hint" id="loadMsg" role="status"></p></div>
+      </section>
+    </div>
+
+    <div class="stack" style="min-width:0">
+      <section class="panel stack" id="ciPanel">
+        <div class="row-between"><h2 style="margin:0">Check-in &amp; re-plan</h2>
+          <div class="inline"><label class="btn btn-plain btn-sm" for="backupFile">Load client backup</label><input id="backupFile" type="file" accept="application/json,.json" hidden></div></div>
+        <p class="hint" id="ciIntro">Load the backup file your client downloads from the bottom of their calendar. You'll see where they stand and can re-plan the rest of their schedule from a date you pick.</p>
+        <div id="ciBody" class="stack" hidden>
+          <div id="ciStatus" class="ci-status"></div>
+          <div class="grid2">
+            <div class="field"><label for="rpDate">Re-plan starting</label><input id="rpDate" type="date"><p class="hint">Chapters not done are spread over content days from this date on.</p></div>
+            <div class="field"><span class="label">Quick options</span>
+              <div class="presets">
+                <button class="btn btn-plain btn-sm" type="button" data-preset="absorb">Absorb</button>
+                <button class="btn btn-plain btn-sm" type="button" data-preset="cw1">Content +1 wk</button>
+                <button class="btn btn-plain btn-sm" type="button" data-preset="cw2">Content +2 wks</button>
+                <button class="btn btn-plain btn-sm" type="button" data-preset="t2">Test +2 wks</button>
+                <button class="btn btn-plain btn-sm" type="button" data-preset="t4">Test +4 wks</button>
+              </div>
+              <p class="hint">Each starts from the client's current plan. You can also edit content weeks or the test date on the left.</p></div>
+          </div>
+          <details class="drop" id="dropBox"><summary>Drop chapters <span class="hint" id="dropCount"></span></summary><div class="drop-list" id="dropList"></div></details>
+          <div class="field"><label for="rpNote">Note to client</label><textarea id="rpNote" rows="2" placeholder="Shown at the top of their calendar, e.g. We spread your remaining chapters over the next 3 weeks."></textarea></div>
+          <div class="table-scroll"><table class="data cmp" id="cmp"></table></div>
+          <div class="inline" style="flex-wrap:wrap"><button class="btn" id="applyRp" type="button">Save re-plan</button><button class="btn btn-plain" id="closeCi" type="button">Close check-in</button></div>
+          <p class="hint" id="rpMsg" role="status"></p>
+        </div>
+      </section>
+      <div class="derived" id="derived"></div>
+      <section class="panel" style="padding:16px">
+        <div class="row-between" style="margin-bottom:12px">
+          <h2 style="margin:0">Schedule preview</h2>
+          <div class="inline" style="align-items:center"><label class="label" for="pvPhase" style="white-space:nowrap">Preview CARS phase</label>
+            <select id="pvPhase" style="width:auto"></select></div>
+        </div>
+        <div class="pv-scroll"><table class="pv" id="pv"></table></div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<footer class="foot"><div class="wrap"><p style="margin:0">Plans are saved in this browser as you edit. The client link carries the whole plan, so nothing is stored on a server.</p><button class="theme-btn" id="themeBtn" type="button">Dark mode</button></div></footer>
+
+<script src="resources.js?v=20261012c"></script>
+<script src="engine.js?v=20261012c"></script>
+<script src="ui.js?v=20261012c"></script>
+<script>
+(function () {
+  const P = window.P520, UI = window.P520UI;
+  P.initTheme(document.getElementById("themeBtn"));
+  const $ = id => document.getElementById(id);
+
+  let plan = P.normalizePlan(P.store.get(P.KEY_COACH, null) || {});
+
+  // Build static controls
+  $("contentWeeks").innerHTML = Array.from({ length: 15 }, (_, i) => i + 2).map(n => "<option>" + n + "</option>").join("");
+  $("pvPhase").innerHTML = P.CARS_PHASES.map(p => '<option value="' + p.n + '">' + p.n + ". " + P.esc(p.name) + "</option>").join("");
+  function chips(id, name) {
+    $(id).innerHTML = P.DOW3.map((d, i) => '<label class="chip"><input type="checkbox" id="' + name + i + '" data-i="' + i + '"><span>' + d + "</span></label>").join("");
+  }
+  chips("studyDays", "sd"); chips("carsP4", "p4"); chips("carsP57", "p57");
+
+  function fill() {
+    $("name").value = plan.name || "";
+    $("target").value = plan.target || "";
+    $("start").value = plan.start || "";
+    $("test").value = plan.test || "";
+    $("resource").value = plan.resource;
+    $("structure").value = plan.structure;
+    $("contentWeeks").value = String(plan.contentWeeks);
+    $("qbank").value = plan.qbank;
+    $("view").value = plan.view || "daily";
+    $("tier").value = plan.tier || "coaching";
+    $("finalNote").value = plan.finalNote || "";
+    fillCatchUp();
+    for (let i = 0; i < 7; i++) {
+      $("sd" + i).checked = !!plan.studyDays[i];
+      $("p4" + i).checked = !!plan.carsP4[i];
+      $("p57" + i).checked = !!plan.carsP57[i];
+    }
+    $("qtBody").innerHTML = plan.qtable.map((r, i) =>
+      "<tr><td class=\"num\">" + (i + 1) + '</td><td><input type="number" min="1" id="qq' + i + '" value="' + r.q + '" aria-label="Row ' + (i + 1) + ' questions per block"></td>' +
+      '<td><input type="number" min="1" id="qb' + i + '" value="' + r.b + '" aria-label="Row ' + (i + 1) + ' blocks per day"></td>' +
+      '<td><input type="checkbox" id="qa' + i + '"' + (r.aligned ? " checked" : "") + ' aria-label="Row ' + (i + 1) + ' content-aligned"></td>' +
+      '<td class="r" id="qw' + i + '"></td></tr>').join("");
+  }
+
+  function read() {
+    plan.name = $("name").value.trim();
+    plan.target = $("target").value ? +$("target").value : "";
+    plan.start = $("start").value;
+    plan.test = $("test").value;
+    plan.resource = $("resource").value;
+    plan.structure = $("structure").value;
+    plan.contentWeeks = +$("contentWeeks").value;
+    plan.qbank = $("qbank").value;
+    plan.view = $("view").value;
+    plan.tier = $("tier").value;
+    plan.finalNote = $("finalNote").value;
+    plan.catchUpDay = +$("catchUp").value;
+    for (let i = 0; i < 7; i++) {
+      plan.studyDays[i] = $("sd" + i).checked;
+      plan.carsP4[i] = $("p4" + i).checked;
+      plan.carsP57[i] = $("p57" + i).checked;
+    }
+    plan.qtable = plan.qtable.map((r, i) => ({ q: Math.max(0, +$("qq" + i).value || 0), b: Math.max(0, +$("qb" + i).value || 0), aligned: $("qa" + i).checked }));
+  }
+
+  const VIEW_HINT = {
+    daily: "Best for students who want structure. Same layout as the Google Sheet.",
+    weekly: "Best for students with changing schedules. Full lengths stay on fixed dates.",
+    phase: "Best for self-directed students. Shows content by subject, full-length dates and weekly question goals."
+  };
+  function fillCatchUp() {
+    const cur = plan.catchUpDay != null ? plan.catchUpDay : -1;
+    $("catchUp").innerHTML = '<option value="-1">None</option>' + P.DOW.map((d, i) => plan.studyDays[i] ? '<option value="' + i + '">' + d + "</option>" : "").join("");
+    $("catchUp").value = plan.studyDays[cur] ? String(cur) : "-1";
+  }
+  function link() { return new URL("calendar.html", location.href).href.split("#")[0] + P.planLinkSuffix(plan); }
+
+  function renderOffs() {
+    $("offList").innerHTML = plan.offDays.length
+      ? plan.offDays.map((d, i) => '<span class="off-tag num">' + P.longDate(P.dn(d)) + '<button type="button" data-i="' + i + '" aria-label="Remove ' + d + '">×</button></span>').join("")
+      : '<span class="hint">None</span>';
+  }
+
+  function update() {
+    read();
+    P.store.set(P.KEY_COACH, plan);
+    $("title").textContent = plan.name ? plan.name + "’s study plan" : "Build a study plan";
+    plan.rev = Date.now();
+    $("viewHint").textContent = VIEW_HINT[plan.view] || "";
+    {
+      const s0 = P.buildSchedule(plan, 1);
+      const open = []; s0.weeks.forEach(w => w.days.forEach(d => { if (d.kind === "open") open.push(d.n); }));
+      $("finalNote").placeholder = P.hasCoach(Object.assign({}, plan, { finalNote: "" })) ? "Plan these days with your coach." : "No set assignments.";
+      $("finalHint").textContent = open.length ? "Shown on " + P.shortDate(open[0]) + " – " + P.shortDate(open[open.length - 1]) + ", the days between the last full-length review and test day. Leave blank to use the default above." : "There are no days between the last full-length review and test day in this plan.";
+    }
+    fillCatchUp();
+    plan.catchUpDay = +$("catchUp").value;
+    const eff = effectivePlan();
+    const sched = P.buildSchedule(eff, +$("pvPhase").value || 1);
+    const D = sched.D;
+    const dpw = D.daysPerWk;
+    plan.qtable.forEach((r, i) => $("qw" + i).textContent = (r.q * r.b * dpw).toLocaleString());
+
+    const n4 = plan.carsP4.filter(Boolean).length, n57 = plan.carsP57.filter(Boolean).length;
+    // Full lengths fall on the test-day weekday and the review on the day after; CARS is skipped on both.
+    const flCol = D.test != null ? P.wd(D.test) : -1, revCol = flCol === 6 ? 0 : flCol + 1;
+    function carsWarn(arr, need, label) {
+      const msgs = [];
+      const n = arr.filter(Boolean).length;
+      if (n !== need) msgs.push(n + " days picked. " + label + " " + need + ".");
+      const clash = [flCol, revCol].filter(c => c >= 0 && arr[c]).map(c => P.DOW[c]);
+      if (clash.length) msgs.push(clash.join(" and ") + " CARS is skipped in full-length weeks (" + P.DOW[flCol] + " is the full length, " + P.DOW[revCol] + " the review).");
+      return msgs.join(" ");
+    }
+    const w4 = carsWarn(plan.carsP4, 3, "The phase is designed for"), w57 = carsWarn(plan.carsP57, 2, "These phases are designed for");
+    $("p4warn").hidden = !w4; $("p4warn").textContent = w4;
+    $("p57warn").hidden = !w57; $("p57warn").textContent = w57;
+
+    const valid = D.start != null && D.test != null && D.test > D.start && dpw > 0;
+    const perDay = sched.totals.contentDays ? (sched.totals.chapters / sched.totals.contentDays) : 0;
+    $("derived").innerHTML = valid ? [
+      [sched.weeks.length, "Total prep weeks"],
+      [plan.contentWeeks + " wks", "Content review"],
+      [sched.totals.chapters + " ch", D.res.label + ", " + perDay.toFixed(1) + " / study day"],
+      ["Week " + D.aamcStartWk, "CARS switches to AAMC"],
+      [sched.totals.fls, "Practice full lengths"],
+      [sched.totals.qs.toLocaleString(), "Total Qs scheduled"],
+      [{ daily: "Daily", weekly: "Weekly", phase: "Phase" }[plan.view] || "Daily", "Plan style"],
+      [Math.max(0, D.test - P.todayDn()), "Days until test"]
+    ].map(([b, s]) => '<div class="stat"><b>' + P.esc(b) + "</b><span>" + P.esc(s) + "</span></div>").join("") :
+      '<div class="empty-state" style="grid-column:1/-1">Pick a start date, a later test date, and at least one study day.</div>';
+
+    renderPreview(sched, valid);
+    $("linkBox").textContent = link();
+    if (ci) renderCheckin(sched);
+  }
+
+  function renderPreview(sched, valid) {
+    const t = $("pv");
+    if (!valid) { t.innerHTML = ""; return; }
+    let h = "<thead><tr><th>Week</th>" + P.DOW.map(d => "<th>" + d + "</th>").join("") + "</tr></thead><tbody>";
+    for (const w of sched.weeks) {
+      h += '<tr><td class="wk">' + w.num + "<span>" + (w.phase === "content" ? "Content" : "Practice") + "</span></td>";
+      for (const d of w.days) {
+        if (d.kind === "none") { h += '<td class="none"></td>'; continue; }
+        let c = '<div class="d">' + P.md(d.n) + "</div>";
+        if (d.kind === "test") c += "Test Day";
+        else if (d.kind === "off") c += "Off Day";
+        else if (d.kind === "rest") c += "Rest / Review";
+        else if (d.kind === "open") c += "Final stretch (personalized)";
+        else {
+          if (d.beforeReplan && !d.am.length) c += '<span class="line rv">Before re-plan</span>';
+          if (d.catchUp) c += '<span class="line qb">Catch-up day</span>';
+          d.am.forEach(x => c += '<span class="line c">AM: ' + P.esc(x.label) + "</span>");
+          d.pm.forEach(x => c += '<span class="line c">PM: ' + P.esc(x.label) + "</span>");
+          if (d.cars) c += '<span class="line cars">CARS: ' + P.esc(d.cars.task) + " (" + P.esc(d.cars.source) + ")</span>";
+          const pr = d.practice;
+          if (pr.type === "fl") c += '<span class="line fl">Practice Full Length</span>';
+          else if (pr.type === "review") c += '<span class="line rv">Full Length Review</span>';
+          else c += '<span class="line qb">QBank: ' + P.esc(pr.text) + (pr.aligned ? " (aligned)" : " (mixed)") + "</span>";
+        }
+        h += '<td class="' + d.kind + (d.catchUp ? " cu" : "") + '">' + c + "</td>";
+      }
+      h += "</tr>";
+    }
+    t.innerHTML = h + "</tbody>";
+  }
+
+  /* ---------- Check-in & re-plan ---------- */
+  let ci = null; // { progress, base, exported, dropped:Set, saved:bool }
+  function effectivePlan() {
+    if (!ci) return plan;
+    return P.replan(plan, ci.progress, { date: $("rpDate").value || P.iso(P.todayDn()), dropped: Array.from(ci.dropped) });
+  }
+  function contentLoad(sched, fromN, p) {
+    let days = 0, fls = 0;
+    for (const w of sched.weeks) for (const d of w.days) {
+      if (d.kind !== "study" || d.n < fromN) continue;
+      if (w.num <= p.contentWeeks) days++;
+      if (d.practice && d.practice.type === "fl") fls++;
+    }
+    return { days, fls };
+  }
+  function renderCheckin(after) {
+    const today = P.todayDn();
+    const fromN = P.dn($("rpDate").value) || today;
+    const base = ci.base;
+    const before = P.buildSchedule(base, 1);
+    const st = P.status(base, before, ci.progress, today);
+    const left = st.total - st.doneCount;
+    const bL = contentLoad(before, fromN, base), aL = contentLoad(after, fromN, plan);
+    const need = bL.days ? left / bL.days : null;
+    $("ciStatus").innerHTML =
+      '<div class="stat"><b>' + st.doneCount + " / " + st.total + "</b><span>Chapters done</span></div>" +
+      '<div class="stat"><b>' + (st.behind ? st.behind + " behind" : st.ahead ? st.ahead + " ahead" : "On track") + "</b><span>Against current plan</span></div>" +
+      '<div class="stat"><b>' + (st.pace == null ? "–" : st.pace.toFixed(1)) + "</b><span>Chapters / study day, last 2 wks</span></div>" +
+      '<div class="stat"><b>' + (need == null ? "–" : need.toFixed(1)) + "</b><span>Needed / day to finish on time</span></div>" +
+      '<div class="ci-missing">' + P.esc(base.name || "Client") + "’s backup from " + (ci.exported ? P.shortDate(P.dn(ci.exported)) : "an unknown date") +
+      (st.missing.length ? ". Not done yet: " + st.missing.slice(0, 6).map(m => P.esc(m.chapter.subject + " Ch. " + m.chapter.ch)).join(", ") + (st.missing.length > 6 ? ", and " + (st.missing.length - 6) + " more" : "") : "") + ".</div>";
+    const endOf = (s, p) => P.shortDate(Math.min(s.weeks.length ? s.D.week1Sun + p.contentWeeks * 7 - 1 : 0, s.D.test - 1));
+    const remA = after.totals.remaining;
+    const rows = [
+      ["Content review ends", endOf(before, base), endOf(after, plan)],
+      ["Chapters left", left, remA],
+      ["Content days left", bL.days, aL.days],
+      ["Chapters per study day", bL.days ? (left / bL.days).toFixed(1) : "Doesn't fit", aL.days ? (remA / aL.days).toFixed(1) : "Doesn't fit"],
+      ["Full lengths left", bL.fls, aL.fls],
+      ["Test date", P.longDate(P.dn(base.test)), P.longDate(P.dn(plan.test))]
+    ];
+    $("cmp").innerHTML = '<thead><tr><th></th><th class="r">Current plan</th><th class="r">After re-plan</th></tr></thead><tbody>' +
+      rows.map(r => "<tr><td>" + r[0] + '</td><td class="r">' + r[1] + '</td><td class="r' + (String(r[1]) !== String(r[2]) ? " chg" : "") + '">' + r[2] + "</td></tr>").join("") + "</tbody>";
+    $("dropCount").textContent = ci.dropped.size ? "(" + ci.dropped.size + " selected)" : "";
+    $("applyRp").disabled = !aL.days && remA > 0;
+    if ($("applyRp").disabled) $("rpMsg").textContent = "The remaining chapters don't fit: content review ends before the re-plan date. Extend content review or move the test date.";
+    else if (!ci.saved) $("rpMsg").textContent = "Not saved yet. The client link below updates after you save.";
+  }
+  function renderDropList() {
+    const done = new Set(Object.keys(ci.progress.ch));
+    const q = P.derive(ci.base).queue.filter(c => !done.has(c.id));
+    const bySubj = {};
+    q.forEach(c => (bySubj[c.subject] = bySubj[c.subject] || []).push(c));
+    $("dropList").innerHTML = Object.keys(bySubj).map(sj => '<div class="grp">' + P.esc(sj) + "</div>" +
+      bySubj[sj].sort((a, b) => a.ch - b.ch).map(c => '<label><input type="checkbox" data-drop="' + c.id + '"' + (ci.dropped.has(c.id) ? " checked" : "") + "><span>Ch. " + c.ch + ": " + P.esc(c.topic) + " <span class=\"hint\">(" + c.tier + ")</span></span></label>").join("")).join("");
+  }
+  $("backupFile").addEventListener("change", e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = () => {
+      try {
+        const obj = JSON.parse(r.result);
+        if (!obj || obj.app !== "project520" || !obj.plan) throw new Error("That file isn't a Project 520 backup.");
+        const base = P.normalizePlan(obj.plan);
+        ci = { progress: P.normProgress(obj.progress), base, exported: obj.exportedDay || (obj.exported || "").slice(0, 10), dropped: new Set(base.dropped || []), saved: false };
+        plan = P.normalizePlan(JSON.parse(JSON.stringify(base)));
+        fill(); renderOffs();
+        $("rpDate").value = P.iso(Math.max(P.todayDn(), P.dn(base.start)));
+        $("rpNote").value = "";
+        renderDropList();
+        $("ciBody").hidden = false; $("ciIntro").hidden = true;
+        document.querySelectorAll(".presets .btn").forEach(b => b.classList.toggle("on", b.dataset.preset === "absorb"));
+        update();
+        UI.toast("Loaded " + (base.name || "client") + "’s backup");
+      } catch (err) { UI.toast(err.message || "That file couldn't be read."); }
+      e.target.value = "";
+    };
+    r.readAsText(f);
+  });
+  document.querySelector(".presets").addEventListener("click", e => {
+    const b = e.target.closest("[data-preset]");
+    if (!b || !ci) return;
+    const k = b.dataset.preset, base = ci.base;
+    let cw = base.contentWeeks, test = base.test;
+    if (k === "cw1") cw += 1;
+    if (k === "cw2") cw += 2;
+    if (k === "t2") test = P.iso(P.dn(base.test) + 14);
+    if (k === "t4") test = P.iso(P.dn(base.test) + 28);
+    $("contentWeeks").value = String(Math.min(16, cw));
+    $("test").value = test;
+    document.querySelectorAll(".presets .btn").forEach(x => x.classList.toggle("on", x === b));
+    ci.saved = false; update();
+  });
+  $("dropList").addEventListener("change", e => {
+    const id = e.target.dataset.drop;
+    if (!id) return;
+    if (e.target.checked) ci.dropped.add(id); else ci.dropped.delete(id);
+    ci.saved = false; update();
+  });
+  $("rpDate").addEventListener("change", () => { ci.saved = false; update(); });
+  $("applyRp").addEventListener("click", () => {
+    if (!ci) return;
+    const today = P.todayDn();
+    const st = P.status(ci.base, P.buildSchedule(ci.base, 1), ci.progress, today);
+    const preset = document.querySelector(".presets .btn.on");
+    plan = P.replan(plan, ci.progress, {
+      date: $("rpDate").value, dropped: Array.from(ci.dropped), note: $("rpNote").value.trim(),
+      behind: st.behind, summary: (preset ? preset.textContent : "Custom") + (ci.dropped.size ? ", dropped " + ci.dropped.size : "")
+    });
+    ci.base = P.normalizePlan(JSON.parse(JSON.stringify(plan)));
+    ci.saved = true;
+    update();
+    $("rpMsg").textContent = "Re-plan saved. Copy the client link and send it; their logs and check-offs carry over.";
+    UI.toast("Re-plan saved");
+  });
+  $("closeCi").addEventListener("click", () => {
+    ci = null; $("ciBody").hidden = true; $("ciIntro").hidden = false; update();
+  });
+
+  function openClient() {
+    P.store.set(P.KEY_PLAN, plan);
+    location.href = link();
+  }
+
+  fill(); renderOffs(); update();
+  const SKIP = new Set(["loadLink", "offDate", "backupFile", "rpNote", "rpDate"]);
+  function onEdit(e) {
+    if (SKIP.has(e.target.id) || e.target.dataset.drop) return;
+    if (ci) ci.saved = false;
+    update();
+  }
+  document.querySelector(".cp").addEventListener("input", onEdit);
+  document.querySelector(".cp").addEventListener("change", onEdit);
+  $("addOff").addEventListener("click", () => {
+    const v = $("offDate").value;
+    if (!v || plan.offDays.includes(v)) return;
+    plan.offDays.push(v); plan.offDays.sort(); $("offDate").value = "";
+    renderOffs(); update();
+  });
+  $("offList").addEventListener("click", e => {
+    const b = e.target.closest("button[data-i]");
+    if (!b) return;
+    plan.offDays.splice(+b.dataset.i, 1); renderOffs(); update();
+  });
+  $("copyLink").addEventListener("click", () => P.copyText(link(), ok => UI.toast(ok ? "Client link copied" : "Couldn't copy. Select the link and copy it.")));
+  $("openClient").addEventListener("click", openClient);
+  $("openClient2").addEventListener("click", openClient);
+  $("newBtn").addEventListener("click", () => {
+    const keep = P.normalizePlan({});
+    keep.start = P.iso(P.todayDn());
+    keep.test = P.iso(P.todayDn() + 7 * 16);
+    plan = keep; fill(); renderOffs(); update();
+    $("name").focus();
+    UI.toast("New client started");
+  });
+  $("loadBtn").addEventListener("click", () => {
+    const m = /p=([^&\s]+)/.exec($("loadLink").value);
+    const p = m && P.decodePlan(m[1]);
+    if (!p) { $("loadMsg").textContent = "That doesn't look like a Project 520 client link."; return; }
+    plan = p; fill(); renderOffs(); update();
+    $("loadMsg").textContent = "Loaded " + (p.name || "the plan") + ". Changes keep the same client ID, so their logs carry over.";
+    $("loadLink").value = "";
+  });
+})();
+</script>
+</body>
+</html>
