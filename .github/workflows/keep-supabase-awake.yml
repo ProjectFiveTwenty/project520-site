@@ -1,0 +1,24 @@
+# Free Supabase projects pause after about a week with no activity. This pings the
+# database every 3 days so the study plan sync stays awake while you have few clients.
+# It reads the URL and key from plan/sync-config.js, so there's nothing to set up here.
+name: Keep Supabase awake
+on:
+  schedule:
+    - cron: "17 13 */3 * *"
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ping the database
+        run: |
+          URL=$(sed -n 's/^ *url: *"\([^"]*\)".*/\1/p' plan/sync-config.js | head -n1)
+          KEY=$(sed -n 's/^ *key: *"\([^"]*\)".*/\1/p' plan/sync-config.js | head -n1)
+          if [ -z "$URL" ] || [ -z "$KEY" ]; then echo "Sync isn't set up yet in plan/sync-config.js; nothing to ping."; exit 0; fi
+          if [ "${KEY#eyJ}" != "$KEY" ]; then
+            curl -fsS -X POST "${URL%/}/rest/v1/rpc/ping" -H "apikey: $KEY" -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" -d '{}'
+          else
+            curl -fsS -X POST "${URL%/}/rest/v1/rpc/ping" -H "apikey: $KEY" -H "Content-Type: application/json" -d '{}'
+          fi
+          echo
