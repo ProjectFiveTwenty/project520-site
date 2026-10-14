@@ -1,4 +1,4 @@
-/* Shared page chrome for the client pages: brand bar, footer with backup tools, toast. */
+/* Shared page chrome for the client pages: brand bar, footer with sync status, toast. */
 (function () {
   const P = window.P520;
 
@@ -19,22 +19,21 @@
     document.body.prepend(el);
   }
 
-  function footer(plan, onImported) {
+  function footer(plan) {
     const el = document.createElement("footer");
     el.className = "foot";
     const S = window.P520Sync;
-    const synced = !!(S && S.active);
+    const online = !!(S && S.enabled);       // the site has syncing set up
+    const synced = online && S.active;       // and this page is tied to a client's link
     const coach = plan && P.hasCoach(plan);
     const note = synced
       ? "Your progress is saved online and syncs across your devices." + (coach ? " Your coach sees it too." : "") + ' <span class="sync-state" id="syncState"></span>'
-      : "Your logs are saved in this browser on this device. " + (coach ? "Download a backup now and then, and send it to your coach before check-ins." : "Download a backup now and then so you have a copy.");
+      : online ? (S.preview && plan ? "Preview: changes made here stay on this device." : "")
+      : plan ? "Your progress is saved in this browser on this device." : "";
     el.innerHTML =
       '<div class="wrap">' +
       "<div><p style=\"margin:0\">" + note + "</p></div>" +
       '<div class="foot-actions">' +
-      (plan ? '<button class="btn btn-plain btn-sm" id="exportBtn" type="button">Download backup</button>' : "") +
-      '<label class="btn btn-plain btn-sm" for="importFile">Restore backup</label>' +
-      '<input id="importFile" type="file" accept="application/json,.json" hidden>' +
       '<button class="theme-btn" id="themeBtn" type="button">Dark mode</button>' +
       "</div></div>";
     document.body.appendChild(el);
@@ -45,23 +44,6 @@
       const txt = { loading: "Syncing…", synced: "Synced.", offline: "Offline right now: changes are saved on this device and sync when you're back online.", error: "Couldn't sync just now; your changes are saved on this device.", badlink: "" }[st] || "";
       t.textContent = txt;
       t.dataset.state = st;
-    });
-    const ex = el.querySelector("#exportBtn");
-    if (ex) ex.addEventListener("click", () => {
-      const stamp = P.iso(P.todayDn());
-      const who = (plan.name || "plan").toLowerCase().replace(/[^a-z0-9]+/g, "-");
-      P.downloadJSON("project520-" + who + "-" + stamp + ".json", P.exportData(plan));
-      toast("Backup downloaded");
-    });
-    el.querySelector("#importFile").addEventListener("change", e => {
-      const f = e.target.files[0];
-      if (!f) return;
-      const r = new FileReader();
-      r.onload = () => {
-        try { P.importData(JSON.parse(r.result)); toast("Backup restored"); setTimeout(() => location.reload(), 600); }
-        catch (err) { toast(err.message || "That file couldn't be read."); }
-      };
-      r.readAsText(f);
     });
   }
 
@@ -84,10 +66,8 @@
       S.onStatus(show);
       return;
     }
-    container.innerHTML =
-      '<div class="empty-state"><h2>No study plan on this device yet</h2>' +
-      "<p>Open the study plan link you received from Project 520, and your calendar will load here. " +
-      "If you saved a backup before, use <b>Restore backup</b> at the bottom of the page.</p></div>";
+    container.innerHTML = '<div class="empty-state"><h2>No study plan on this device yet</h2>' +
+      "<p>Open the study plan link you received from Project 520, and your calendar will load here.</p></div>";
   }
 
   // A new plan link pasted into an open tab only changes the #hash; reload so it takes effect.

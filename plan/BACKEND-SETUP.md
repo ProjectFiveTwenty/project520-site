@@ -70,7 +70,7 @@ If the project ever does pause, open it in Supabase and press **Restore**. No da
 - **Clients' browsers stay the main copy.** Pages load from the device right away, then sync in the background. Offline changes upload once the device is back online. Each page footer shows "Synced", or a note that changes are being kept on the device.
 - **Edits on two devices merge.** CARS entries and full-length scores from both devices are kept. Check-offs merge chapter by chapter. If two devices change the same item at once, the device that syncs second wins for that item.
 - **Only you change plans.** Clients never write a plan. Edits in the Control Panel stay private until you press **Save changes to client**, or **Save re-plan** during a check-in, which saves and sends in one step.
-- **Check-ins don't need backup files.** For a synced client, **Start check-in** loads their latest progress directly. **Load client backup** still works for anyone who isn't synced.
+- **Check-ins use live data.** **Start check-in** loads the client's latest progress directly.
 - **Open client view previews on your device only.** It uses a `#p=` link, so clicking around in the preview never changes the client's data.
 - **Old `#p=` links still work.** They stay on that one device and don't sync. To move a client over, paste their old link into **Edit an existing client**, then press **Create client** and send them the new link. Their existing data uploads the first time they open the new link on the device where they used the old one.
 

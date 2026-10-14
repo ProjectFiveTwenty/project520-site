@@ -500,27 +500,6 @@
   }
   function planLinkSuffix(plan) { return "#p=" + encodePlan(plan); }
 
-  /* ---------- Backup (export / import of a client's logs) ---------- */
-  function exportData(plan) {
-    return { app: "project520", exported: new Date().toISOString(), exportedDay: iso(todayDn()), plan, cars: store.get(keyCars(plan.id), []), fl: store.get(keyFL(plan.id), []), progress: loadProgress(plan.id) };
-  }
-  function importData(obj) {
-    if (!obj || obj.app !== "project520" || !obj.plan) throw new Error("That file isn't a Project 520 backup.");
-    const plan = normalizePlan(obj.plan);
-    store.set(KEY_PLAN, plan);
-    store.set(keyCars(plan.id), obj.cars || []);
-    store.set(keyFL(plan.id), obj.fl || []);
-    store.set(keyProgress(plan.id), normProgress(obj.progress));
-    return plan;
-  }
-  function downloadJSON(filename, data) {
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob); a.download = filename;
-    document.body.appendChild(a); a.click();
-    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
-  }
-
   /* ---------- Small UI helpers ---------- */
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch])); }
   function copyText(text, onDone) {
@@ -562,6 +541,6 @@
     FL_SOURCES, FL_SECTIONS, ankiQuery, DECKS, deckLabel, chapterTag, deckCoverage,
     store, KEY_PLAN, KEY_COACH, keyCars, keyFL, keyProgress, loadProgress, saveProgress, loadClientPlan, planLinkSuffix,
     emptyProgress, normProgress, status, replan, milestones, MILESTONE_LABEL, hasCoach, finalStretchText,
-    exportData, importData, downloadJSON, esc, copyText, initTheme
+    esc, copyText, initTheme
   };
 })();

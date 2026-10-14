@@ -12,7 +12,7 @@ Drop this folder into the `projectfivetwenty.github.io` repo as `plan/`, and the
 There are two modes, set by `sync-config.js`:
 
 - **Synced (after you follow [BACKEND-SETUP.md](BACKEND-SETUP.md)).** The plan and the client's progress live in Supabase. Client links end in `#c=<secret>`. Clients' check-offs, CARS logs and scores sync across their devices. You sign in to the Control Panel to see a client list, save plans to clients and run check-ins on live data.
-- **Browser only (if `sync-config.js` is empty).** The whole plan rides in the client link after `#p=`, and each client's logs are saved in their browser only. Clients can download a backup from the footer and send it to you.
+- **Browser only (if `sync-config.js` is empty).** The whole plan rides in the client link after `#p=`, and each client's logs are saved in their browser only. Check-ins need syncing, so this mode is only a fallback.
 
 In both modes:
 
@@ -30,10 +30,10 @@ In both modes:
 ## Progress and re-planning
 
 - Clients check off chapters and practice blocks on the calendar. A status strip shows whether they're on track, ahead, or behind (and which chapters are missing).
-- Re-plans go through you. For a synced client, open them from the client list and press **Start check-in** under Check-in & re-plan. For a client on an old `#p=` link, ask for a backup file and use **Load client backup**.
+- Re-plans go through you. Open the client from the client list and press **Start check-in** under Check-in & re-plan.
 - You'll see chapters done, how far behind they are, their pace over the last two weeks, and the pace needed to finish on time.
 - Pick a start date for the re-plan and an option: absorb, extend content review, or move the test date. You can also drop chapters and write a note. The table compares the current plan with the re-plan.
-- **Save re-plan**. A synced client sees it the next time they open their plan. For a `#p=` client, copy the link and send it. Their check-offs, CARS log and scores carry over either way, and an old bookmarked link won't undo the re-plan.
+- **Save re-plan**. The client sees it the next time they open their plan. Their check-offs, CARS log and scores carry over.
 - Days before the re-plan date show what the client actually finished; the remaining chapters are spread evenly from the re-plan date on.
 
 ## Files
