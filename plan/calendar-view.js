@@ -27,7 +27,15 @@
   const allChapters = {};
   (D.res ? D.res.chapters : []).forEach(c => allChapters[c.id] = c);
   const qbankName = P.esc(plan.qbank || "QBank");
-  const subj = c => P.esc(c.subject) + " · Ch. " + c.ch;
+  // For subject-wide Anki searches: the plan's other subjects plus every other subject of this
+  // subject's resource (even ones the plan takes from elsewhere), so a parent tag is only used
+  // when it covers this subject and nothing else.
+  const otherChapters = sj => {
+    const key = P.subjectResource(plan, sj);
+    const res = (window.P520_RESOURCES || {})[key];
+    return D.res.chapters.filter(c => c.subject !== sj).concat(res ? res.chapters.filter(c => c.subject !== sj) : []);
+  };
+  const subj = c => (c.source ? P.esc(c.source) + " · " : "") + P.esc(c.subject) + " · Ch. " + c.ch;
   const isDone = id => !!progress.ch[id];
   const placed = new Set();
   sched.weeks.forEach(w => w.days.forEach(d => { if (d.am) d.am.concat(d.pm).forEach(c => placed.add(c.id)); }));
@@ -261,7 +269,7 @@
           '</span><span class="prog-line"><i style="width:' + Math.round(100 * d2 / list.length) + '%"></i></span></summary><div class="subj-body">' +
           '<div class="row-between"><span class="hint">Unchecked chapters first</span>' +
           ankiButton("Anki for " + sj, "Chapters in this subject", [{ label: "All " + sj + " chapters not checked off", list: list.filter(c => !isDone(c.id)),
-            q: P.ankiSubjectQuery(D.res.chapters.filter(c => c.subject === sj), list.filter(c => !isDone(c.id)), D.res.chapters.filter(c => c.subject !== sj), deck) }].concat(list.map(c => ({ label: "Ch. " + c.ch + ": " + c.topic, list: [c] })))) + "</div>" +
+            q: P.ankiSubjectQuery(D.res.chapters.filter(c => c.subject === sj), list.filter(c => !isDone(c.id)), otherChapters(sj), deck) }].concat(list.map(c => ({ label: "Ch. " + c.ch + ": " + c.topic, list: [c] })))) + "</div>" +
           list.slice().sort((a, b) => isDone(a.id) - isDone(b.id)).map(c => chapterTask("", c)).join("") +
           "</div></details>";
       });

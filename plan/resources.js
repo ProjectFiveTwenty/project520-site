@@ -371,6 +371,31 @@
   };
 
   const TIER = { I: "Intro", M: "Intermediate", A: "Advanced" };
+
+  // Workload weight per chapter, where 1 = a typical Kaplan chapter (about 2 hours of work).
+  // Kaplan and UWorld chapters weigh 1. Khan Academy units are weighted by video time:
+  // weight = video minutes x 1.5 (pausing, notes) / 120.
+  // P/S minutes: Student Doctor Network compilation (June 2015), one entry per unit.
+  // Science minutes: per-section totals from SDN (May 2015) averaged over that section's units:
+  // Biomolecules 20h/18, Cells 7h10m/10, Organ Systems 24h/18, Physical Processes 39h20m/27,
+  // Chemical Processes 29h15m/22. Edit any number here to tune a unit.
+  const KHAN_PS_MINUTES = {
+    "ps-1": 65, "ps-2": 51, "ps-3": 22, "ps-4": 28, "ps-5": 34, "ps-6": 40, "ps-7": 48, "ps-8": 19, "ps-9": 40,
+    "ps-10": 33, "ps-11": 15, "ps-12": 48, "ps-13": 45, "ps-14": 177, "ps-15": 52, "ps-16": 52, "ps-17": 60,
+    "ps-18": 49, "ps-19": 63, "ps-20": 76, "ps-21": 21, "ps-22": 54, "ps-23": 44, "ps-24": 98, "ps-25": 59,
+    "ps-26": 40, "ps-27": 42, "ps-28": 65, "ps-29": 31, "ps-30": 12, "ps-31": 14, "ps-32": 69, "ps-33": 84,
+    "ps-34": 32, "ps-35": 70
+  }; // ps-14 includes the 18-min endocrine set; ps-15 and ps-26 aren't in the compilation (estimates)
+  const KHAN_SECTION_MINUTES = { 1: 67, 2: 43, 3: 80, 4: 87, 5: 80 };
+  function weightFor(key, id, tags) {
+    if (key !== "khanacademy") return 1;
+    let min = KHAN_PS_MINUTES[id];
+    if (min == null) {
+      const m = /Foundation0(\d)/.exec(tags.anking || "");
+      min = KHAN_SECTION_MINUTES[m ? +m[1] : 0] || 80;
+    }
+    return Math.round(min * 1.5 / 120 * 100) / 100;
+  }
   // Short, stable chapter IDs (e.g. "gc-5") used to record progress. Don't change these
   // when re-ordering chapters; order lives in the three order numbers.
   const CODE = { "General Chemistry": "gc", "Physics": "ph", "Organic Chemistry": "oc", "Biochemistry": "bc", "Biology": "bio", "Behavioral": "ps" };
@@ -386,7 +411,9 @@
           order: { Classic: classic, Integrated: integrated, Hybrid: hybrid },
           label: subject + " Ch. " + ch + ": " + topic,
           tags,                         // { anking, captainhook, miledown } Anki searches
-          tag: tags.anking || ""        // AnKing search (kept for older code)
+          tag: tags.anking || "",       // AnKing search (kept for older code)
+          res: key,                     // which resource this chapter belongs to
+          weight: weightFor(key, id, tags)
         });
       }
     }

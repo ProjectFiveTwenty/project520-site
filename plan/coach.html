@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400&display=swap">
-<link rel="stylesheet" href="p520.css?v=20261014e">
+<link rel="stylesheet" href="p520.css?v=20261014f">
 <style>
   .cp { display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); gap: 20px; align-items: start; }
   .side { display: grid; gap: 16px; }
@@ -139,11 +139,18 @@
       <section class="panel stack">
         <h2>Content review</h2>
         <div class="grid2">
-          <div class="field"><label for="resource">Primary resource</label>
+          <div class="field"><label for="resource">Resource</label>
             <select id="resource"><option value="kaplan">Kaplan</option><option value="uworld">UWorld</option><option value="khanacademy">Khan Academy</option></select></div>
           <div class="field"><label for="structure">Schedule structure</label>
             <select id="structure"><option>Classic</option><option>Integrated</option><option>Hybrid</option></select></div>
         </div>
+        <details class="drop" id="bySubject"><summary>Customize by subject <span class="hint" id="bySubjectNote"></span></summary>
+          <div class="stack" style="margin-top:10px">
+            <div class="grid2" id="subjectRes"></div>
+            <div class="inline" style="flex-wrap:wrap"><button class="btn btn-plain btn-sm" type="button" id="presetKhanPS">Kaplan + Khan P/S</button><button class="btn btn-plain btn-sm" type="button" id="presetClear">Same resource for all</button></div>
+            <p class="hint" style="margin:0">Each subject's chapters come from its resource. Days are filled by workload (a Kaplan chapter = about 2 hours), so short Khan units share a day with other work.</p>
+          </div>
+        </details>
         <div class="grid2">
           <div class="field"><label for="contentWeeks">Content review weeks</label><select id="contentWeeks"></select></div>
           <div class="field"><label for="qbank">Question bank</label>
@@ -235,12 +242,12 @@
 
 <footer class="foot"><div class="wrap"><p style="margin:0" id="footNote">Plans are saved in this browser as you edit. The client link carries the whole plan, so nothing is stored on a server.</p><button class="theme-btn" id="themeBtn" type="button">Dark mode</button></div></footer>
 
-<script src="anki-tags.js?v=20261014e"></script>
-<script src="resources.js?v=20261014e"></script>
-<script src="engine.js?v=20261014e"></script>
-<script src="sync-config.js?v=20261014e"></script>
-<script src="sync.js?v=20261014e"></script>
-<script src="ui.js?v=20261014e"></script>
+<script src="anki-tags.js?v=20261014f"></script>
+<script src="resources.js?v=20261014f"></script>
+<script src="engine.js?v=20261014f"></script>
+<script src="sync-config.js?v=20261014f"></script>
+<script src="sync.js?v=20261014f"></script>
+<script src="ui.js?v=20261014f"></script>
 <script>
 (function () {
   const P = window.P520, UI = window.P520UI;
@@ -260,6 +267,11 @@
     $(id).innerHTML = P.DOW3.map((d, i) => '<label class="chip"><input type="checkbox" id="' + name + i + '" data-i="' + i + '"><span>' + d + "</span></label>").join("");
   }
   chips("studyDays", "sd"); chips("carsP4", "p4"); chips("carsP57", "p57");
+  $("subjectRes").innerHTML = P.SUBJECTS.map((sj, i) => '<div class="field"><label for="rs' + i + '">' + P.esc(sj) + '</label><select id="rs' + i + '" data-subject="' + P.esc(sj) + '"><option value="">Same as above</option><option value="kaplan">Kaplan</option><option value="uworld">UWorld</option><option value="khanacademy">Khan Academy</option></select></div>').join("");
+  function fillSubjectRes() {
+    P.SUBJECTS.forEach((sj, i) => { const v = (plan.resourceBySubject || {})[sj]; $("rs" + i).value = v && v !== plan.resource ? v : ""; });
+    $("bySubject").open = $("bySubject").open || P.isMixed(plan);
+  }
 
   function fill() {
     $("name").value = plan.name || "";
@@ -276,6 +288,7 @@
     $("finalNote").value = plan.finalNote || "";
     fillCatchUp();
     fillFlDay();
+    fillSubjectRes();
     for (let i = 0; i < 7; i++) {
       $("sd" + i).checked = !!plan.studyDays[i];
       $("p4" + i).checked = !!plan.carsP4[i];
@@ -294,6 +307,8 @@
     plan.start = $("start").value;
     plan.test = $("test").value;
     plan.resource = $("resource").value;
+    plan.resourceBySubject = {};
+    P.SUBJECTS.forEach((sj, i) => { const v = $("rs" + i).value; if (v && v !== plan.resource) plan.resourceBySubject[sj] = v; });
     plan.structure = $("structure").value;
     plan.contentWeeks = +$("contentWeeks").value;
     plan.qbank = $("qbank").value;
@@ -318,19 +333,18 @@
   };
   // Deck list shows how many of the chosen resource's chapters have searches for each deck
   function fillDecks() {
-    const res = $("resource").value || plan.resource;
     const cur = plan.deck || "anking";
     $("deck").innerHTML = P.DECKS.map(d => {
-      const cov = P.deckCoverage(res, d.key);
-      const note = cov.tagged === cov.total ? "" : cov.tagged ? " (" + cov.tagged + " of " + cov.total + " chapters)" : " (no " + ((window.P520_RESOURCES[res] || {}).label || "") + " searches yet)";
+      const cov = P.deckCoverage(plan, d.key);
+      const note = cov.tagged === cov.total ? "" : cov.tagged ? " (" + cov.tagged + " of " + cov.total + " chapters)" : " (no " + P.resourceSummary(plan) + " searches yet)";
       return '<option value="' + d.key + '">' + P.esc(d.label + note) + "</option>";
     }).join("");
     $("deck").value = cur;
     if (!$("deck").value) $("deck").value = "anking";
   }
   function deckHint() {
-    const cov = P.deckCoverage(plan.resource, plan.deck);
-    const label = P.deckLabel(plan.deck), resLabel = (window.P520_RESOURCES[plan.resource] || {}).label || "";
+    const cov = P.deckCoverage(plan, plan.deck);
+    const label = P.deckLabel(plan.deck), resLabel = P.resourceSummary(plan);
     if (!cov.total) return "";
     if (cov.tagged === cov.total) return "The client's Anki buttons give " + label + " searches for every " + resLabel + " chapter.";
     if (!cov.tagged) return "There are no " + label + " searches for " + resLabel + " yet, so the client's Anki buttons will say so. Pick another deck or resource, or add searches to anki-tags.js.";
@@ -415,11 +429,15 @@
     $("p57warn").hidden = !w57; $("p57warn").textContent = w57;
 
     const valid = D.start != null && D.test != null && D.test > D.start && dpw > 0;
-    const perDay = sched.totals.contentDays ? (sched.totals.chapters / sched.totals.contentDays) : 0;
+    const mixed = D.res && D.res.mixed;
+    let work = 0; sched.weeks.forEach(w => w.days.forEach(d => { if (d.am) d.am.concat(d.pm).forEach(c => work += c.weight || 1); }));
+    const perDay = sched.totals.contentDays ? ((mixed ? work : sched.totals.chapters) / sched.totals.contentDays) : 0;
+    { const counts = {}; D.queue.forEach(c => { const l = c.source || (window.P520_RESOURCES[plan.resource] || {}).label; counts[l] = (counts[l] || 0) + 1; });
+      $("bySubjectNote").textContent = mixed ? "(" + Object.keys(counts).map(k => counts[k] + " " + k).join(", ") + ")" : ""; }
     $("derived").innerHTML = valid ? [
       [sched.weeks.length, "Total prep weeks"],
       [plan.contentWeeks + " wks", "Content review"],
-      [sched.totals.chapters + " ch", D.res.label + ", " + perDay.toFixed(1) + " / study day"],
+      [sched.totals.chapters + " ch", D.res.label + ", " + perDay.toFixed(1) + (mixed ? " Kaplan-size ch / study day" : " / study day")],
       ["Week " + D.aamcStartWk, "CARS switches to AAMC"],
       [sched.totals.fls, "Practice full lengths"],
       [sched.totals.qs.toLocaleString(), "Total Qs scheduled"],
@@ -518,7 +536,7 @@
     const bySubj = {};
     q.forEach(c => (bySubj[c.subject] = bySubj[c.subject] || []).push(c));
     $("dropList").innerHTML = Object.keys(bySubj).map(sj => '<div class="grp">' + P.esc(sj) + "</div>" +
-      bySubj[sj].sort((a, b) => a.ch - b.ch).map(c => '<label><input type="checkbox" data-drop="' + c.id + '"' + (ci.dropped.has(c.id) ? " checked" : "") + "><span>Ch. " + c.ch + ": " + P.esc(c.topic) + " <span class=\"hint\">(" + c.tier + ")</span></span></label>").join("")).join("");
+      bySubj[sj].sort((a, b) => a.ch - b.ch).map(c => '<label><input type="checkbox" data-drop="' + c.id + '"' + (ci.dropped.has(c.id) ? " checked" : "") + "><span>" + (c.source ? P.esc(c.source) + " · " : "") + "Ch. " + c.ch + ": " + P.esc(c.topic) + " <span class=\"hint\">(" + c.tier + ")</span></span></label>").join("")).join("");
   }
   function startCheckin(planObj, progressObj, asOf, live) {
     const base = P.normalizePlan(planObj);
@@ -817,6 +835,15 @@
     loadClients();
   }
 
+  $("presetKhanPS").addEventListener("click", () => {
+    $("resource").value = "kaplan";
+    P.SUBJECTS.forEach((sj, i) => { $("rs" + i).value = sj === "Behavioral" ? "khanacademy" : ""; });
+    if (ci) ci.saved = false; update(); fillSubjectRes();
+  });
+  $("presetClear").addEventListener("click", () => {
+    P.SUBJECTS.forEach((sj, i) => { $("rs" + i).value = ""; });
+    if (ci) ci.saved = false; update(); fillSubjectRes();
+  });
   fill(); renderOffs(); update();
   const SKIP = new Set(["loadLink", "offDate", "rpNote", "rpDate"]);
   function onEdit(e) {

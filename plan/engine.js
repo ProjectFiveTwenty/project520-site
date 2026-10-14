@@ -30,7 +30,8 @@
     id: "",
     name: "",
     target: "",                // goal total score, e.g. 515 (optional)
-    resource: "kaplan",          // kaplan | uworld | khanacademy
+    resource: "kaplan",          // kaplan | uworld | khanacademy: the primary resource
+    resourceBySubject: {},       // optional per-subject override, e.g. { "Behavioral": "khanacademy" }
     structure: "Hybrid",         // Classic | Integrated | Hybrid
     start: "2026-09-14",
     test: "2027-01-11",
@@ -76,6 +77,7 @@
     out.contentWeeks = Math.max(1, Math.min(20, parseInt(out.contentWeeks, 10) || 8));
     out.offDays = (out.offDays || []).filter(Boolean).sort();
     out.dropped = Array.isArray(out.dropped) ? out.dropped : [];
+    out.resourceBySubject = out.resourceBySubject && typeof out.resourceBySubject === "object" ? out.resourceBySubject : {};
     out.history = Array.isArray(out.history) ? out.history : [];
     if (out.baseline && !out.baseline.date) out.baseline = null;
     if (!out.id) out.id = makeId();
@@ -97,11 +99,50 @@
     } catch (e) { return null; }
   }
 
+  /* ---------- Content resources, optionally chosen per subject ---------- */
+  const SUBJECTS = ["Biology", "Biochemistry", "General Chemistry", "Organic Chemistry", "Physics", "Behavioral"];
+  function subjectResource(plan, subject) {
+    const R = window.P520_RESOURCES || {};
+    const k = (plan.resourceBySubject || {})[subject];
+    return k && R[k] ? k : plan.resource;
+  }
+  function isMixed(plan) { return SUBJECTS.some(sj => subjectResource(plan, sj) !== plan.resource); }
+  // Every chapter in the plan, in study order. Each subject comes from its resource. Chapters
+  // from a resource other than the primary get IDs like "khanacademy:ps-3", so progress never
+  // mixes up two resources' chapters. Orders from different resources are merged by each
+  // chapter's relative position in its own resource's order, which keeps subjects interleaved.
+  function planChapters(plan) {
+    const R = window.P520_RESOURCES || {};
+    const primary = plan.resource;
+    const keys = [];
+    SUBJECTS.forEach(sj => { const k = subjectResource(plan, sj); if (!keys.includes(k)) keys.push(k); });
+    if (!keys.includes(primary) && R[primary]) keys.unshift(primary);
+    const out = [];
+    keys.forEach(key => {
+      const res = R[key];
+      if (!res) return;
+      const sorted = res.chapters.slice().sort((a, b) => a.order[plan.structure] - b.order[plan.structure]);
+      sorted.forEach((c, i) => {
+        if (subjectResource(plan, c.subject) !== key) return;
+        out.push(key === primary ? Object.assign({}, c, { pos: (i + 0.5) / sorted.length })
+          : Object.assign({}, c, { id: key + ":" + c.id, label: res.label + " · " + c.label, source: res.label, pos: (i + 0.5) / sorted.length }));
+      });
+    });
+    return out.sort((a, b) => a.pos - b.pos || (a.res === primary ? -1 : 0) - (b.res === primary ? -1 : 0));
+  }
+  function resourceSummary(plan) {
+    const R = window.P520_RESOURCES || {};
+    if (!isMixed(plan)) return (R[plan.resource] || {}).label || "";
+    const names = [];
+    SUBJECTS.forEach(sj => { const l = (R[subjectResource(plan, sj)] || {}).label; if (l && !names.includes(l)) names.push(l); });
+    return names.join(" + ");
+  }
+
   /* ---------- Derived plan numbers (Control_Panel B6, C20, C21, ...) ---------- */
   function derive(plan) {
     const start = dn(plan.start), test = dn(plan.test);
-    const res = (window.P520_RESOURCES || {})[plan.resource];
-    const queue = res ? res.chapters.slice().sort((a, b) => a.order[plan.structure] - b.order[plan.structure]) : [];
+    const queue = planChapters(plan);
+    const res = (window.P520_RESOURCES || {})[plan.resource] ? { key: plan.resource, label: resourceSummary(plan), chapters: queue, mixed: isMixed(plan) } : null;
     const studyDays = plan.studyDays.map(Boolean);
     const daysPerWk = studyDays.filter(Boolean).length;
     // Total Prep Weeks = ROUNDUP((test - start)/7, 0) + 1
@@ -223,12 +264,16 @@
     const poolDays = poolDayList.length;
     const dayIndex = new Map(poolDayList.map((n, i) => [n, i + 1]));
     const PN = pool.length;
+    // Spread by workload: each chapter goes to the day where the middle of its effort falls.
+    // With every chapter weighing 1 (Kaplan, UWorld) this is the same even split as before.
+    const PW = pool.reduce((a, c) => a + (c.weight || 1), 0);
+    const dayOf = new Map();
+    { let cum = 0; pool.forEach(c => { const w = c.weight || 1; const mid = cum + w / 2; cum += w;
+        dayOf.set(c.id, Math.max(1, Math.ceil(mid * poolDays / PW - 1e-9))); }); }
     function chaptersForDay(n) {
       const k = dayIndex.get(n);
       if (!k) return { am: [], pm: [] };
-      const from = Math.round((k - 1) * PN / poolDays);
-      const to = Math.round(k * PN / poolDays);
-      const list = pool.slice(from, Math.min(to, PN));
+      const list = pool.filter(c => dayOf.get(c.id) === k);
       const amN = Math.ceil(list.length / 2);
       return { am: list.slice(0, amN), pm: list.slice(amN) };
     }
@@ -439,12 +484,13 @@
   const DECKS = window.P520_ANKI_DECKS || [{ key: "anking", label: "AnKing MCAT" }];
   function deckLabel(deck) { const d = DECKS.find(x => x.key === deck); return d ? d.label : "AnKing MCAT"; }
   function chapterTag(c, deck) { return ((c && c.tags) || {})[deck || "anking"] || ""; }
-  // How many of a resource's chapters have a search for this deck
-  function deckCoverage(resourceKey, deck) {
-    const r = (window.P520_RESOURCES || {})[resourceKey];
-    if (!r) return { tagged: 0, total: 0, missing: [] };
-    const missing = r.chapters.filter(c => !chapterTag(c, deck));
-    return { tagged: r.chapters.length - missing.length, total: r.chapters.length, missing };
+  // How many chapters have a search for this deck: a resource key, or a plan (all its chapters)
+  function deckCoverage(resourceOrPlan, deck) {
+    const list = typeof resourceOrPlan === "object" && resourceOrPlan ? planChapters(resourceOrPlan)
+      : ((window.P520_RESOURCES || {})[resourceOrPlan] || {}).chapters;
+    if (!list) return { tagged: 0, total: 0, missing: [] };
+    const missing = list.filter(c => !chapterTag(c, deck));
+    return { tagged: list.length - missing.length, total: list.length, missing };
   }
   // One search for a set of chapters. Each chapter's search is wrapped in parentheses when it
   // has more than one term, so OR, negation and quoted deck names combine safely.
@@ -591,7 +637,7 @@
 
   window.P520 = {
     dn, iso, wd, md, longDate, shortDate, todayDn, DOW, DOW3,
-    DEFAULT_PLAN, normalizePlan, flWeekday, encodePlan, decodePlan, derive, buildSchedule, makeId,
+    DEFAULT_PLAN, normalizePlan, flWeekday, SUBJECTS, subjectResource, isMixed, planChapters, resourceSummary, encodePlan, decodePlan, derive, buildSchedule, makeId,
     CARS_PHASES, CARS_SOURCES, carsRowPasses, carsProgress, carsPhaseByDay,
     FL_SOURCES, FL_SECTIONS, ankiQuery, ankiSubjectQuery, DECKS, deckLabel, chapterTag, deckCoverage,
     store, KEY_PLAN, KEY_COACH, keyCars, keyFL, keyProgress, loadProgress, saveProgress, loadClientPlan, planLinkSuffix,
