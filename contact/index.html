@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contact · Project 520</title>
+<meta name="description" content="Get in touch with Project 520 about MCAT prep planning and coaching.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231f3561'/%3E%3Ctext x='32' y='42' font-family='Arial' font-weight='700' font-size='26' fill='white' text-anchor='middle'%3E520%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root {
+  --bg: #ffffff;
+  --ink: #16202c;
+  --muted: #5a6573;
+  --line: #e2e6eb;
+  --soft: #f4f6f8;
+  --accent: #1f3561;
+  --accent-hover: #162746;
+  --accent-ink: #ffffff;
+  --green: #17936a;
+  --font-head: "Montserrat", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11161c; --ink: #e6ebf0; --muted: #98a3af; --line: #29313b; --soft: #181f27;
+    --accent: #7ba6ff; --accent-hover: #9bbcff; --accent-ink: #11161c; --green: #3fc590; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11161c; --ink: #e6ebf0; --muted: #98a3af; --line: #29313b; --soft: #181f27;
+  --accent: #7ba6ff; --accent-hover: #9bbcff; --accent-ink: #11161c; --green: #3fc590; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 400 17px/1.65 var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); }
+.wrap { max-width: 760px; margin: 0 auto; padding: 0 24px; }
+h1, h2, h3 { font-family: var(--font-head); margin: 0; line-height: 1.2; }
+h1 { font-size: clamp(2rem, 5vw, 2.9rem); font-weight: 800; letter-spacing: -0.015em; }
+h2 { font-size: clamp(1.45rem, 3.2vw, 1.85rem); font-weight: 700; margin-bottom: 20px; }
+h3 { font-size: 1.08rem; font-weight: 700; margin-bottom: 6px; }
+p { margin: 0 0 14px; }
+.muted { color: var(--muted); }
+section { padding: 56px 0; border-top: 1px solid var(--line); }
+
+/* nav */
+.nav .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: 22px; padding-bottom: 22px; }
+.brand { font: 800 1.05rem/1 var(--font-head); color: var(--ink); text-decoration: none; letter-spacing: 0.04em; }
+.nav-links { display: flex; align-items: center; gap: 22px; }
+.nav-links a { color: var(--muted); text-decoration: none; font-size: 0.95rem; }
+.nav-links a:hover { color: var(--ink); }
+
+/* buttons */
+.btn {
+  display: inline-block; padding: 13px 22px; border-radius: 8px;
+  font: 600 1rem/1.2 var(--font-body); text-decoration: none; cursor: pointer;
+  background: var(--accent); color: var(--accent-ink); border: 1px solid var(--accent);
+}
+.btn:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.btn-plain { background: transparent; color: var(--ink); border-color: var(--line); }
+.btn-plain:hover { background: var(--soft); border-color: var(--line); }
+.nav-links .btn { padding: 9px 16px; font-size: 0.92rem; color: var(--accent-ink); }
+
+/* hero */
+.hero { border-top: 0; padding: 40px 0 56px; }
+.tagline { font: 600 0.85rem/1 var(--font-head); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 18px; }
+.hero h1 .hl { color: var(--accent); }
+.hero .lede { font-size: 1.12rem; color: var(--muted); margin-top: 20px; }
+.ctas { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
+.note { font-size: 0.9rem; color: var(--muted); margin-top: 14px; }
+
+
+.value { font: 600 clamp(1.1rem, 2.4vw, 1.3rem)/1.4 var(--font-head); color: var(--ink); margin: 18px 0 0; }
+
+
+
+/* steps */
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 24px; }
+.steps li { display: grid; grid-template-columns: 40px 1fr; gap: 14px; }
+.step-num { width: 34px; height: 34px; border-radius: 50%; background: var(--soft); color: var(--accent); display: grid; place-items: center; font: 700 0.95rem/1 var(--font-head); }
+.steps p { color: var(--muted); margin: 0; }
+.free { color: var(--green); font-weight: 600; font-size: 0.85rem; margin-left: 6px; font-family: var(--font-body); }
+
+/* features */
+.features { display: grid; gap: 28px; }
+.features p { color: var(--muted); margin-bottom: 8px; }
+.features ul { margin: 0; padding-left: 20px; }
+.features li { margin: 3px 0; }
+
+
+/* plans */
+.plans { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.plan { border: 1px solid var(--line); border-radius: 10px; padding: 24px; display: flex; flex-direction: column; }
+.plan.featured { border-color: var(--accent); }
+.price { font: 800 2.1rem/1 var(--font-head); margin: 10px 0 8px; }
+.price small { font: 400 0.95rem/1 var(--font-body); color: var(--muted); }
+.plan .price-note { font-size: 0.88rem; color: var(--muted); }
+.plan .desc { color: var(--muted); font-size: 0.97rem; flex: 1; }
+.plan .btn { align-self: flex-start; margin-top: 6px; }
+
+.compare { width: 100%; border-collapse: collapse; margin-top: 32px; font-size: 0.95rem; }
+.compare th, .compare td { padding: 10px 8px; text-align: left; border-bottom: 1px solid var(--line); }
+.compare th { font-family: var(--font-head); font-weight: 700; font-size: 0.85rem; }
+.compare .c { text-align: center; width: 90px; }
+.yes { color: var(--green); font-weight: 700; }
+.no { color: var(--muted); opacity: 0.5; }
+.footnotes { margin-top: 14px; font-size: 0.85rem; color: var(--muted); }
+.footnotes p { margin: 0 0 4px; }
+
+/* founder */
+.founder { display: grid; grid-template-columns: 140px 1fr; gap: 32px; align-items: start; }
+.avatar { width: 140px; height: 140px; border-radius: 50%; object-fit: cover; background: var(--soft); overflow: hidden; color: transparent; }
+.founder p { color: var(--muted); }
+.sig { color: var(--ink) !important; font-weight: 600; }
+
+/* faq */
+.faq details { border-bottom: 1px solid var(--line); }
+.faq details:first-child { border-top: 1px solid var(--line); }
+.faq summary { cursor: pointer; list-style: none; padding: 16px 0; font-weight: 600; display: flex; justify-content: space-between; gap: 16px; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: "+"; color: var(--accent); font-weight: 600; font-size: 1.2rem; line-height: 1; }
+.faq details[open] summary::after { content: "–"; }
+.faq details p { color: var(--muted); }
+
+/* final */
+.final { text-align: center; }
+.quote { margin: 0 auto 22px; max-width: 22em; font: 700 clamp(1.4rem, 3.4vw, 1.9rem)/1.3 var(--font-head); color: var(--ink); }
+.final .ctas { justify-content: center; }
+
+footer { border-top: 1px solid var(--line); padding: 28px 0 40px; color: var(--muted); font-size: 0.85rem; }
+footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; }
+footer p { margin: 0 0 4px; }
+footer a { color: var(--muted); }
+.theme-btn { background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 6px; padding: 5px 10px; font: inherit; cursor: pointer; }
+
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+
+@media (max-width: 640px) {
+  .wrap { padding: 0 16px; }
+  body { font-size: 16px; }
+  .nav-links a:not(.btn) { display: none; }
+  .plans { grid-template-columns: 1fr; }
+  .founder { grid-template-columns: 1fr; gap: 20px; }
+  .avatar { width: 110px; height: 110px; }
+  .ctas .btn { width: 100%; text-align: center; }
+  .compare .c { width: 70px; }
+  .compare th, .compare td { padding: 9px 4px; font-size: 0.88rem; }
+}
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+/* contact page */
+.contact { border-top: 0; padding: 40px 0 64px; }
+.contact h1 { margin-bottom: 14px; }
+.contact .lede { font-size: 1.08rem; color: var(--muted); max-width: 34em; }
+.cards { display: grid; gap: 16px; margin-top: 28px; }
+.card { border: 1px solid var(--line); border-radius: 10px; padding: 22px 24px; }
+.card .label { font: 600 0.78rem/1 var(--font-head); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+.email { font: 700 clamp(1.05rem, 3.6vw, 1.35rem)/1.3 var(--font-head); color: var(--ink); overflow-wrap: anywhere; margin-bottom: 14px; }
+.card .ctas { margin-top: 0; }
+.card p { color: var(--muted); }
+.copied { font-size: 0.9rem; color: var(--green); margin: 10px 0 0; min-height: 1.2em; }
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="/">PROJECT 520</a>
+    <nav class="nav-links" aria-label="Main">
+      <a href="/#how">How it works</a>
+      <a href="/#plans">Plans</a>
+      <a class="btn js-consult" href="#">Free consult</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="contact">
+    <div class="wrap">
+      <div class="tagline">Contact</div>
+      <h1>Get in touch</h1>
+      <p class="lede">Questions about plans, coaching or whether Project 520 is a good fit? Send an email.</p>
+
+      <div class="cards">
+        <div class="card">
+          <div class="label">Email</div>
+          <div class="email" id="email"></div>
+          <div class="ctas">
+            <button class="btn" type="button" id="copyBtn">Copy email address</button>
+            <a class="btn btn-plain" id="mailBtn" href="#">Open in your email app</a>
+          </div>
+          <p class="copied" id="copied" role="status"></p>
+        </div>
+        <div class="card">
+          <div class="label">Ready to start?</div>
+          <p>The free strategy consult starts with a short survey and takes about five minutes.</p>
+          <div class="ctas"><a class="btn js-consult" href="#">Schedule a free strategy consult →</a></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <p>© <span id="yr">2026</span> Project 520. MCAT® is a registered trademark of the Association of American Medical Colleges (AAMC).</p>
+      <p>Project 520 is not affiliated with or endorsed by the AAMC.</p>
+    </div>
+    <div style="display:flex;gap:16px;align-items:center">
+      <a href="/">Home</a>
+      <button class="theme-btn" id="themeBtn" type="button" aria-label="Toggle light or dark theme">Theme</button>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // ===== EDIT ME =====
+  // Keep these the same as on the main page (index.html).
+  var FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSf1o5U1gilqUx3L-pWB06cm8P5lfhH_u22WM8IXq5zeu4WY2Q/viewform?usp=header";
+  var CONTACT_EMAIL = "coaching@projectfivetwenty.com";
+  // ===================
+
+  (function () {
+    document.querySelectorAll(".js-consult").forEach(function (a) {
+      a.href = FORM_URL; a.target = "_blank"; a.rel = "noopener";
+    });
+    document.getElementById("email").textContent = CONTACT_EMAIL;
+    document.getElementById("mailBtn").href = "mailto:" + CONTACT_EMAIL;
+    document.getElementById("yr").textContent = new Date().getFullYear();
+
+    var msg = document.getElementById("copied");
+    function done(ok) { msg.textContent = ok ? "Copied. Paste it into your email." : "Couldn't copy. Select the address above and copy it."; }
+    document.getElementById("copyBtn").addEventListener("click", function () {
+      function fallback() {
+        var ta = document.createElement("textarea");
+        ta.value = CONTACT_EMAIL; ta.setAttribute("readonly", ""); ta.style.position = "fixed"; ta.style.opacity = "0";
+        document.body.appendChild(ta); ta.select();
+        var ok = false; try { ok = document.execCommand("copy"); } catch (e) {}
+        ta.remove(); done(ok);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(CONTACT_EMAIL).then(function () { done(true); }, fallback);
+      else fallback();
+    });
+
+    var root = document.documentElement;
+    try { var saved = localStorage.getItem("p520-theme"); if (saved) root.setAttribute("data-theme", saved); } catch (e) {}
+    document.getElementById("themeBtn").addEventListener("click", function () {
+      var dark = root.getAttribute("data-theme") === "dark" ||
+        (!root.getAttribute("data-theme") && matchMedia("(prefers-color-scheme: dark)").matches);
+      var next = dark ? "light" : "dark";
+      root.setAttribute("data-theme", next);
+      try { localStorage.setItem("p520-theme", next); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>
