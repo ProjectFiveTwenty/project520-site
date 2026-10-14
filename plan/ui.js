@@ -27,13 +27,14 @@
     const synced = online && S.active;       // and this page is tied to a client's link
     const coach = plan && P.hasCoach(plan);
     const note = synced
-      ? "Your progress is saved online and syncs across your devices." + (coach ? " Your coach sees it too." : "") + ' <span class="sync-state" id="syncState"></span>'
+      ? "Your progress is saved online and syncs across your devices." + (coach ? " Your coach sees it too." : "")
       : online ? (S.preview && plan ? "Preview: changes made here stay on this device." : "")
       : plan ? "Your progress is saved in this browser on this device." : "";
     el.innerHTML =
       '<div class="wrap">' +
       "<div><p style=\"margin:0\">" + note + "</p></div>" +
       '<div class="foot-actions">' +
+      (synced ? '<span class="sync-pill" id="syncState" role="status"></span>' : "") +
       '<button class="theme-btn" id="themeBtn" type="button">Dark mode</button>' +
       "</div></div>";
     document.body.appendChild(el);
@@ -41,8 +42,11 @@
     if (synced) S.onStatus(st => {
       const t = el.querySelector("#syncState");
       if (!t) return;
-      const txt = { loading: "Syncing…", synced: "Synced.", offline: "Offline right now: changes are saved on this device and sync when you're back online.", error: "Couldn't sync just now; your changes are saved on this device.", badlink: "" }[st] || "";
+      const txt = { loading: "Syncing…", synced: "Synced", offline: "Offline · saved on this device", error: "Not synced · saved on this device" }[st] || "";
+      const tip = { offline: "Your changes are saved on this device and sync when you're back online.", error: "Couldn't reach the server just now. Your changes are saved on this device and will sync shortly." }[st] || "";
       t.textContent = txt;
+      t.title = tip;
+      t.hidden = !txt;
       t.dataset.state = st;
     });
   }

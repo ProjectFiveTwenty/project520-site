@@ -185,5 +185,8 @@ footer.foot .wrap { display: flex; flex-wrap: wrap; justify-content: space-betwe
 
 /* Sync */
 .sync-bar { display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap; background: var(--accent-soft); color: var(--ink); border-bottom: 1px solid var(--line); padding: 8px 16px; font-weight: 600; }
-.sync-state { color: var(--muted); }
-.sync-state[data-state="offline"], .sync-state[data-state="error"] { color: var(--rose); }
+.sync-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; color: var(--muted); padding: 4px 2px; white-space: nowrap; }
+.sync-pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); flex: none; }
+.sync-pill[data-state="synced"]::before { background: var(--green); }
+.sync-pill[data-state="offline"], .sync-pill[data-state="error"] { color: var(--rose); }
+.sync-pill[data-state="offline"]::before, .sync-pill[data-state="error"]::before { background: var(--rose); }
