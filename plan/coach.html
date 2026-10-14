@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400&display=swap">
-<link rel="stylesheet" href="p520.css?v=20261013s">
+<link rel="stylesheet" href="p520.css?v=20261013t">
 <style>
   .cp { display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); gap: 20px; align-items: start; }
   .side { display: grid; gap: 16px; }
@@ -153,6 +153,9 @@
           <select id="deck"></select>
           <p class="hint" id="deckHint"></p></div>
         <div class="field"><span class="label">Study days</span><div class="chips" id="studyDays"></div></div>
+        <div class="field"><label for="flDay">Full-length day</label>
+          <select id="flDay"></select>
+          <p class="hint" id="flHint"></p><p class="warn" id="flWarn" hidden></p></div>
         <div class="field">
           <label for="offDate">Scheduled off days</label>
           <div class="inline"><input id="offDate" type="date"><button class="btn btn-plain" id="addOff" type="button">Add</button></div>
@@ -232,12 +235,12 @@
 
 <footer class="foot"><div class="wrap"><p style="margin:0" id="footNote">Plans are saved in this browser as you edit. The client link carries the whole plan, so nothing is stored on a server.</p><button class="theme-btn" id="themeBtn" type="button">Dark mode</button></div></footer>
 
-<script src="anki-tags.js?v=20261013s"></script>
-<script src="resources.js?v=20261013s"></script>
-<script src="engine.js?v=20261013s"></script>
-<script src="sync-config.js?v=20261013s"></script>
-<script src="sync.js?v=20261013s"></script>
-<script src="ui.js?v=20261013s"></script>
+<script src="anki-tags.js?v=20261013t"></script>
+<script src="resources.js?v=20261013t"></script>
+<script src="engine.js?v=20261013t"></script>
+<script src="sync-config.js?v=20261013t"></script>
+<script src="sync.js?v=20261013t"></script>
+<script src="ui.js?v=20261013t"></script>
 <script>
 (function () {
   const P = window.P520, UI = window.P520UI;
@@ -272,6 +275,7 @@
     $("tier").value = plan.tier || "coaching";
     $("finalNote").value = plan.finalNote || "";
     fillCatchUp();
+    fillFlDay();
     for (let i = 0; i < 7; i++) {
       $("sd" + i).checked = !!plan.studyDays[i];
       $("p4" + i).checked = !!plan.carsP4[i];
@@ -298,6 +302,7 @@
     plan.tier = $("tier").value;
     plan.finalNote = $("finalNote").value;
     plan.catchUpDay = +$("catchUp").value;
+    plan.flDay = $("flDay").value === "" ? -1 : +$("flDay").value;
     for (let i = 0; i < 7; i++) {
       plan.studyDays[i] = $("sd" + i).checked;
       plan.carsP4[i] = $("p4" + i).checked;
@@ -332,6 +337,29 @@
     return cov.missing.length + " " + resLabel + (cov.missing.length === 1 ? " chapter has" : " chapters have") + " no " + label + " search yet: " +
       cov.missing.slice(0, 4).map(c => c.subject + " Ch. " + c.ch).join(", ") + (cov.missing.length > 4 ? ", and " + (cov.missing.length - 4) + " more" : "") + ".";
   }
+  // Full lengths default to the test-day weekday; the coach can pick another study day.
+  function fillFlDay() {
+    const t = P.dn(plan.test), tw = t != null ? P.wd(t) : null;
+    const cur = plan.flDay != null ? +plan.flDay : -1;
+    const opts = ['<option value="-1">Same as test day' + (tw != null ? " (" + P.DOW[tw] + ")" : "") + "</option>"];
+    P.DOW.forEach((d, i) => { if (i !== tw && (plan.studyDays[i] || i === cur)) opts.push('<option value="' + i + '">' + d + (plan.studyDays[i] ? "" : " (not a study day)") + "</option>"); });
+    $("flDay").innerHTML = opts.join("");
+    $("flDay").value = cur === tw ? "-1" : String(cur);
+    if ($("flDay").value === "") $("flDay").value = "-1";
+  }
+  function flNotes() {
+    const t = P.dn(plan.test);
+    if (t == null) return { hint: "", warn: "" };
+    const tw = P.wd(t), col = P.flWeekday(plan), rev = (col + 1) % 7, same = col === tw;
+    let warn = "";
+    if (!plan.studyDays[col]) warn = same
+      ? "Test day is a " + P.DOW[tw] + ", which isn't a study day, so this plan has no practice full lengths. Make " + P.DOW[tw] + " a study day, or pick a full-length day above."
+      : P.DOW[col] + " isn't a study day, so this plan has no practice full lengths. Pick a study day.";
+    else if (!plan.studyDays[rev]) warn = P.DOW[rev] + " isn't a study day, so full lengths have no review day after them.";
+    const hint = same ? "Full lengths fall on the same weekday as test day, each reviewed the next day."
+      : "Full lengths on " + P.DOW[col] + "s, each reviewed the next day. Test day is a " + P.DOW[tw] + ".";
+    return { hint, warn };
+  }
   function fillCatchUp() {
     const cur = plan.catchUpDay != null ? plan.catchUpDay : -1;
     $("catchUp").innerHTML = '<option value="-1">None</option>' + P.DOW.map((d, i) => plan.studyDays[i] ? '<option value="' + i + '">' + d + "</option>" : "").join("");
@@ -362,6 +390,9 @@
     }
     fillCatchUp();
     plan.catchUpDay = +$("catchUp").value;
+    fillFlDay();
+    plan.flDay = +$("flDay").value;
+    { const f = flNotes(); $("flHint").textContent = f.hint; $("flWarn").textContent = f.warn; $("flWarn").hidden = !f.warn; }
     const eff = effectivePlan();
     const sched = P.buildSchedule(eff, +$("pvPhase").value || 1);
     const D = sched.D;
@@ -369,8 +400,8 @@
     plan.qtable.forEach((r, i) => $("qw" + i).textContent = (r.q * r.b * dpw).toLocaleString());
 
     const n4 = plan.carsP4.filter(Boolean).length, n57 = plan.carsP57.filter(Boolean).length;
-    // Full lengths fall on the test-day weekday and the review on the day after; CARS is skipped on both.
-    const flCol = D.test != null ? P.wd(D.test) : -1, revCol = flCol === 6 ? 0 : flCol + 1;
+    // Full lengths fall on the full-length day and the review on the day after; CARS is skipped on both.
+    const flCol = D.test != null ? P.flWeekday(plan) : -1, revCol = flCol === 6 ? 0 : flCol + 1;
     function carsWarn(arr, need, label) {
       const msgs = [];
       const n = arr.filter(Boolean).length;

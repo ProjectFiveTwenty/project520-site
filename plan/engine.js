@@ -57,11 +57,19 @@
     finalNote: "",               // optional text for the final-stretch days (after the last FL review)
     view: "daily",               // daily | weekly | phase: how the client's calendar is laid out
     catchUpDay: -1,              // weekday (0 = Sun) kept free of new chapters, or -1 for none
+    flDay: -1,                   // weekday for practice full lengths, or -1 for the test-day weekday
     baseline: null,              // { date: "2026-10-20", done: ["gc-1", ...] }
     dropped: [],
     history: []                  // [{ date, note, behind, summary }]
   };
 
+  // Weekday (0 = Sun) for practice full lengths: the coach's pick, else the test-day weekday.
+  function flWeekday(plan) {
+    const f = parseInt(plan.flDay, 10);
+    if (f >= 0 && f <= 6) return f;
+    const t = dn(plan.test);
+    return t == null ? 0 : wd(t);
+  }
   function normalizePlan(p) {
     const base = JSON.parse(JSON.stringify(DEFAULT_PLAN));
     const out = Object.assign(base, p || {});
@@ -226,9 +234,15 @@
     }
 
     const testWk = Math.floor((test - week1Sun) / 7) + 1;
-    const testCol = wd(test); // 0..6
-    const flReviewCol = testCol === 6 ? 0 : testCol + 1;
+    // Practice full lengths fall on the full-length weekday (the test-day weekday unless the
+    // coach picked another), at least a week before test day; each review is the next day.
+    const flCol = flWeekday(plan);
     const flStartWk = cw + 1;
+    const flSet = new Set(), reviewSet = new Set();
+    for (let w = flStartWk; w <= totalWeeks; w++) {
+      const n = week1Sun + (w - 1) * 7 + flCol;
+      if (n <= test - 7) { flSet.add(n); reviewSet.add(n + 1); }
+    }
     let totalQs = 0, fls = 0;
 
     for (let w = 1; w <= totalWeeks; w++) {
@@ -265,10 +279,9 @@
         day.cars = carsDay ? { phase, source: phase === 7 && source === "AAMC" ? "AAMC / FLs" : source, task: carsTask(phase) } : null;
 
         // QBank / Full Length
-        const reviewWk = testCol === 6 ? w - 1 : w;
-        if (w >= flStartWk && w < testWk && c === testCol) {
+        if (flSet.has(n)) {
           day.practice = { type: "fl", text: "Practice Full Length" }; fls++;
-        } else if (reviewWk >= flStartWk && reviewWk < testWk && c === flReviewCol) {
+        } else if (reviewSet.has(n)) {
           day.practice = { type: "review", text: "Full Length Review" };
         } else {
           const qs = (+qrow.q || 0) * (+qrow.b || 0);
@@ -544,7 +557,7 @@
 
   window.P520 = {
     dn, iso, wd, md, longDate, shortDate, todayDn, DOW, DOW3,
-    DEFAULT_PLAN, normalizePlan, encodePlan, decodePlan, derive, buildSchedule, makeId,
+    DEFAULT_PLAN, normalizePlan, flWeekday, encodePlan, decodePlan, derive, buildSchedule, makeId,
     CARS_PHASES, CARS_SOURCES, carsRowPasses, carsProgress, carsPhaseByDay,
     FL_SOURCES, FL_SECTIONS, ankiQuery, DECKS, deckLabel, chapterTag, deckCoverage,
     store, KEY_PLAN, KEY_COACH, keyCars, keyFL, keyProgress, loadProgress, saveProgress, loadClientPlan, planLinkSuffix,
