@@ -8,6 +8,13 @@
 <meta property="og:title" content="Project 520 — Plan · Prepare · Perform">
 <meta property="og:description" content="Stop guessing. Start preparing. Get a personalized schedule and know exactly what to do next.">
 <meta property="og:type" content="website">
+<meta property="og:url" content="https://projectfivetwenty.com/">
+<meta property="og:image" content="https://projectfivetwenty.com/images/og-image.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Project 520: a handcrafted MCAT schedule built around you">
+<meta property="og:site_name" content="Project 520">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231f3561'/%3E%3Ctext x='32' y='42' font-family='Arial' font-weight='700' font-size='26' fill='white' text-anchor='middle'%3E520%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -138,6 +145,16 @@ section { padding: 56px 0; border-top: 1px solid var(--line); }
 .final { text-align: center; }
 .quote { margin: 0 auto 22px; max-width: 22em; font: 700 clamp(1.4rem, 3.4vw, 1.9rem)/1.3 var(--font-head); color: var(--ink); }
 .final .ctas { justify-content: center; }
+/* Final call to action: desk photo under a navy overlay (the same in light and dark mode) */
+.final.photo {
+  border-top: 0; padding: 96px 0;
+  background: linear-gradient(rgba(22, 39, 70, 0.86), rgba(22, 39, 70, 0.86)), url("/images/desk.jpg") center / cover no-repeat, #162746;
+}
+.final.photo .quote { color: #ffffff; }
+.final.photo .muted { color: #c9d3ea; }
+.final.photo .btn { background: #ffffff; color: #1f3561; border-color: #ffffff; }
+.final.photo .btn:hover { background: #e6ebf3; border-color: #e6ebf3; }
+.final.photo .btn:focus-visible { outline: 2px solid #ffffff; outline-offset: 3px; }
 
 footer { border-top: 1px solid var(--line); padding: 28px 0 40px; color: var(--muted); font-size: 0.85rem; }
 footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; }
@@ -358,7 +375,7 @@ footer a { color: var(--muted); }
     </div>
   </section>
 
-  <section class="final">
+  <section class="final photo">
     <div class="wrap">
       <blockquote class="quote">“You should never have to wonder what you should be doing next.”</blockquote>
       <p class="muted">Take the survey and book your free strategy consult. It takes about five minutes.</p>
