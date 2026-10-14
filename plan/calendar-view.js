@@ -260,7 +260,8 @@
         html += '<details class="subj"' + (open ? " open" : "") + '><summary><span class="nm">' + P.esc(sj) + '</span><span class="ct">' + d2 + " / " + list.length +
           '</span><span class="prog-line"><i style="width:' + Math.round(100 * d2 / list.length) + '%"></i></span></summary><div class="subj-body">' +
           '<div class="row-between"><span class="hint">Unchecked chapters first</span>' +
-          ankiButton("Anki for " + sj, "Chapters in this subject", [{ label: "All " + sj + " chapters not checked off", list: list.filter(c => !isDone(c.id)) }].concat(list.map(c => ({ label: "Ch. " + c.ch + ": " + c.topic, list: [c] })))) + "</div>" +
+          ankiButton("Anki for " + sj, "Chapters in this subject", [{ label: "All " + sj + " chapters not checked off", list: list.filter(c => !isDone(c.id)),
+            q: P.ankiSubjectQuery(D.res.chapters.filter(c => c.subject === sj), list.filter(c => !isDone(c.id)), D.res.chapters.filter(c => c.subject !== sj), deck) }].concat(list.map(c => ({ label: "Ch. " + c.ch + ": " + c.topic, list: [c] })))) + "</div>" +
           list.slice().sort((a, b) => isDone(a.id) - isDone(b.id)).map(c => chapterTask("", c)).join("") +
           "</div></details>";
       });
@@ -338,7 +339,7 @@
     const set = ankiSets[+b.dataset.anki];
     $("ankiTitle").textContent = set.title;
     $("ankiSub").textContent = (set.sub ? set.sub + " · " : "") + deckName + " deck";
-    const withQ = set.entries.map(en => ({ label: en.label, list: en.list, q: P.ankiQuery(en.list, deck), onlyIfBoth: en.onlyIfBoth }));
+    const withQ = set.entries.map(en => ({ label: en.label, list: en.list, q: en.q != null ? en.q : P.ankiQuery(en.list, deck), onlyIfBoth: en.onlyIfBoth }));
     const nonEmpty = withQ.filter(x => x.list.length && !x.onlyIfBoth).length;
     current = withQ.filter(x => x.list.length && (!x.onlyIfBoth || nonEmpty > 1));
     $("ankiList").innerHTML = current.map((x, i) => {

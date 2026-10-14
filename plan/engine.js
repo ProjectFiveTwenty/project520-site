@@ -462,6 +462,61 @@
     return (terms.length > 1 ? "(" + joined + ")" : joined) + " is:suspended -flag:1";
   }
 
+  // A chapter's search as simple terms ({ kind: "tag" | "deck", path, quoted }), or null when it
+  // isn't just tag:/deck: terms joined by OR (then the subject search falls back to the OR list).
+  function searchTerms(q) {
+    const parts = String(q || "").trim().split(/ OR (?=(?:[^"]*"[^"]*")*[^"]*$)/);
+    const out = [];
+    for (const raw of parts) {
+      const p = raw.trim();
+      let m = /^"(tag|deck):([^"]+)"$/.exec(p);
+      if (m) { out.push({ kind: m[1], path: m[2], quoted: true }); continue; }
+      m = /^(tag|deck):(\S+)$/.exec(p);
+      if (m) { out.push({ kind: m[1], path: m[2], quoted: false }); continue; }
+      return null;
+    }
+    return out.length ? out : null;
+  }
+  function termText(kind, path, neg) {
+    const t = kind + ":" + path;
+    return (neg ? "-" : "") + (/\s/.test(path) ? '"' + t + '"' : t);
+  }
+  // Search for the chapters of one subject not yet done, as short as possible. When every chapter
+  // of the subject sits under one parent tag (or deck) that no other subject uses, this can be the
+  // parent minus the finished chapters, e.g. (tag:Parent -tag:Parent::Ch1) is:suspended -flag:1.
+  // Whichever of that and the plain OR list is shorter wins.
+  function ankiSubjectQuery(subjectChapters, remaining, otherChapters, deck) {
+    const orQ = ankiQuery(remaining, deck);
+    if (!remaining.length || subjectChapters.length < 2) return orQ;
+    const parsed = subjectChapters.map(c => ({ c, terms: searchTerms(chapterTag(c, deck)) }));
+    if (parsed.some(x => !x.terms)) return orQ;
+    const all = [].concat(...parsed.map(x => x.terms));
+    const kind = all[0].kind;
+    if (all.some(t => t.kind !== kind)) return orQ;
+    const segs = all.map(t => t.path.split("::"));
+    let n = 0;
+    while (segs.every(s => s.length > n + 1 && s[n] === segs[0][n])) n++;
+    if (!n) return orQ;
+    const parent = segs[0].slice(0, n).join("::");
+    // The parent must not also cover another subject's chapters.
+    const clash = otherChapters.some(c => (searchTerms(chapterTag(c, deck)) || []).some(t => t.kind === kind && (t.path === parent || t.path.indexOf(parent + "::") === 0)));
+    if (clash) return orQ;
+    const keep = new Set(remaining.map(c => c.id));
+    const keepPaths = new Set([].concat(...parsed.filter(x => keep.has(x.c.id)).map(x => x.terms.map(t => t.path))));
+    const excl = [];
+    for (const x of parsed) {
+      if (keep.has(x.c.id)) continue;
+      for (const t of x.terms) {
+        if (keepPaths.has(t.path)) return orQ;   // a finished chapter shares a tag with a remaining one
+        const s = termText(kind, t.path, true);
+        if (excl.indexOf(s) < 0) excl.push(s);
+      }
+    }
+    const base = termText(kind, parent, false);
+    const parentQ = (excl.length ? "(" + base + " " + excl.join(" ") + ")" : base) + " is:suspended -flag:1";
+    return parentQ.length < orQ.length ? parentQ : orQ;
+  }
+
   /* ---------- Full-length scores (Full_Lengths) ---------- */
   const FL_SOURCES = ["Diagnostic Half-Length", "AAMC Unscored FL", "AAMC FL 1", "AAMC FL 2", "AAMC FL 3", "AAMC FL 4", "AAMC FL 5", "AAMC FL 6",
     "Kaplan 1", "Kaplan 2", "Kaplan 3", "Kaplan 4", "Kaplan 5", "Kaplan 6", "Blueprint 1", "Blueprint 2", "Blueprint 3", "Blueprint 4", "Blueprint 5", "Blueprint 6",
@@ -538,7 +593,7 @@
     dn, iso, wd, md, longDate, shortDate, todayDn, DOW, DOW3,
     DEFAULT_PLAN, normalizePlan, flWeekday, encodePlan, decodePlan, derive, buildSchedule, makeId,
     CARS_PHASES, CARS_SOURCES, carsRowPasses, carsProgress, carsPhaseByDay,
-    FL_SOURCES, FL_SECTIONS, ankiQuery, DECKS, deckLabel, chapterTag, deckCoverage,
+    FL_SOURCES, FL_SECTIONS, ankiQuery, ankiSubjectQuery, DECKS, deckLabel, chapterTag, deckCoverage,
     store, KEY_PLAN, KEY_COACH, keyCars, keyFL, keyProgress, loadProgress, saveProgress, loadClientPlan, planLinkSuffix,
     emptyProgress, normProgress, status, replan, milestones, MILESTONE_LABEL, hasCoach, finalStretchText,
     esc, copyText, initTheme
