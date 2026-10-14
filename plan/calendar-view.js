@@ -345,7 +345,7 @@
     $("ankiList").innerHTML = current.map((x, i) => {
       const missing = x.list.filter(c => !P.chapterTag(c, deck)).map(c => c.label);
       const emptyText = "No " + deckName + " search yet for " + (missing.join("; ") || "this chapter");
-      return '<div><div class="row-between" style="margin-bottom:6px"><span class="kind k-content">' + P.esc(x.label) + "</span>" +
+      return '<div><div class="anki-row"><span class="kind k-content">' + P.esc(x.label) + "</span>" +
         '<button class="btn btn-sm" type="button" data-copy="' + i + '"' + (x.q ? "" : " disabled") + ">Copy</button></div>" +
         '<div class="query' + (x.q ? "" : " empty") + '">' + P.esc(x.q || emptyText) + "</div></div>";
     }).join("");
