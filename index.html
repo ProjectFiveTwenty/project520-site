@@ -376,7 +376,7 @@ footer a { color: var(--muted); }
       <p>Project 520 is not affiliated with or endorsed by the AAMC.</p>
     </div>
     <div style="display:flex;gap:16px;align-items:center">
-      <a href="mailto:hello@project520.com" id="contact">Contact</a>
+      <a href="/contact/" id="contact">Contact</a>
       <button class="theme-btn" id="themeBtn" type="button" aria-label="Toggle light or dark theme">Theme</button>
     </div>
   </div>
@@ -386,11 +386,10 @@ footer a { color: var(--muted); }
   // ===== EDIT ME =====
   // Paste your Google Form link here. Every consult button on the page uses it.
   var FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSf1o5U1gilqUx3L-pWB06cm8P5lfhH_u22WM8IXq5zeu4WY2Q/viewform?usp=header";
-  // Your contact email (footer link).
-  var CONTACT_EMAIL = "hello@project520.com";
+  // Your contact email is set on the contact page (contact/index.html).
   // ===================
 
-  // Optional source tracking: visiting project520.com/?src=youtube passes "youtube" on to the form,
+  // Optional source tracking: visiting projectfivetwenty.com/?src=youtube passes "youtube" on to the form,
   // if you set FORM_SRC_FIELD to your form's prefill entry id (e.g. "entry.123456789"). Leave blank to skip.
   var FORM_SRC_FIELD = "";
 
@@ -405,7 +404,6 @@ footer a { color: var(--muted); }
     document.querySelectorAll(".js-consult").forEach(function (a) {
       a.href = url; a.target = "_blank"; a.rel = "noopener";
     });
-    document.getElementById("contact").href = "mailto:" + CONTACT_EMAIL;
     document.getElementById("yr").textContent = new Date().getFullYear();
 
     var root = document.documentElement;
