@@ -479,7 +479,7 @@
   }
   function termText(kind, path, neg) {
     const t = kind + ":" + path;
-    return (neg ? "-" : "") + (/\s/.test(path) ? '"' + t + '"' : t);
+    return (neg ? "-" : "") + (/[\s()"]/.test(path) ? '"' + t + '"' : t);   // quote spaces and parentheses
   }
   // Search for the chapters of one subject not yet done, as short as possible. When every chapter
   // of the subject sits under one parent tag (or deck) that no other subject uses, this can be the
