@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400&display=swap">
-<link rel="stylesheet" href="p520.css?v=20261014j">
+<link rel="stylesheet" href="p520.css?v=20261014k">
 <style>
   .cp { display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); gap: 20px; align-items: start; }
   .side { display: grid; gap: 16px; }
@@ -22,7 +22,22 @@
   .off-tag button:hover { color: var(--rose); }
   .inline { display: flex; gap: 8px; }
   .inline > :first-child { flex: 1; }
-  .qt input[type="number"] { width: 72px; }
+  .qt input[type="number"] { width: 56px; padding: 6px 7px; }
+  .qt input.qb-n { width: 46px; }
+  .qt td, .qt th { padding: 5px 4px !important; }
+  .qt .wkd small { display: block; color: var(--muted); font-size: 0.74rem; white-space: nowrap; }
+  .qt input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); }
+  .qt td.r small { display: block; color: var(--aamc); font-size: 0.74rem; white-space: nowrap; }
+  .qt tr.divider td { font: 600 0.72rem/1 var(--font-head); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); padding-top: 12px; }
+  .qt-units { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; }
+  .qt tr.ov td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+  .qt tr.ov input, .qt tr.ov select { border-color: var(--accent); }
+  .qt .wkd { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .qt .reset { border: 0; background: none; color: var(--accent); cursor: pointer; font: 600 0.8rem var(--font-body); padding: 0; }
+  .sub-h { font-size: 0.82rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+  .aamc-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 6px 14px; }
+  .aamc-list label { display: flex; gap: 8px; align-items: flex-start; font-size: 0.9rem; }
+  .aamc-list label span small { display: block; color: var(--muted); font-size: 0.78rem; }
   .qt td, .qt th { padding: 6px 6px; }
   .warn { color: var(--rose); font-size: 0.82rem; margin: 6px 0 0; }
   .derived { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
@@ -40,6 +55,7 @@
   .pv .c { color: var(--content); }
   .pv .cars { color: var(--sky); }
   .pv .qb { color: var(--qbank); }
+  .pv .aamc { color: var(--aamc); }
   .pv .fl { color: var(--purple); font-weight: 600; }
   .pv .rv { color: var(--muted); }
   .pv td.rest, .pv td.off, .pv td.open { background: var(--soft); color: var(--muted); }
@@ -180,8 +196,23 @@
 
       <section class="panel stack">
         <h2>Question bank ramp</h2>
-        <p class="hint">Rows 1–4 spread across the content weeks; after that the ramp moves one row per week, up to row 8.</p>
-        <div class="table-scroll"><table class="data qt"><thead><tr><th>#</th><th>Qs / block</th><th>Blocks / day</th><th>Aligned</th><th class="r">Qs / week</th></tr></thead><tbody id="qtBody"></tbody></table></div>
+        <div class="grid2">
+          <div class="field"><label for="rqStart">Starting block</label><div class="qt-units"><input type="number" min="1" max="200" id="rqStart"><span class="hint">Qs</span></div></div>
+          <div class="field"><label for="rqFull">Full block</label><div class="qt-units"><input type="number" min="1" max="200" id="rqFull"><span class="hint">Qs</span></div></div>
+          <div class="field"><label for="rqFullWeek">Reach full blocks by</label><select id="rqFullWeek"></select></div>
+          <div class="field"><label for="rqBlocks">Blocks a day after content review</label><select id="rqBlocks"><option value="1">1 block</option><option value="2">2 blocks</option></select></div>
+          <div class="field"><label for="rqMixed">Switch to mixed subjects</label><select id="rqMixed"></select></div>
+        </div>
+        <p class="hint" id="rqHint"></p>
+        <p class="warn" id="rqWarn" hidden></p>
+        <h3 class="sub-h">AAMC official questions</h3>
+        <div class="aamc-list" id="aamcList"></div>
+        <p class="hint" id="aamcHint"></p>
+        <p class="warn" id="aamcWarn" hidden></p>
+        <h3 class="sub-h">Week by week</h3>
+        <p class="hint" style="margin:0">Change any week to override it. Changed weeks are marked and keep their numbers when you change the settings above.</p>
+        <div class="table-scroll"><table class="data qt"><thead><tr><th>Week</th><th>Qs / block</th><th>Blocks</th><th title="Content-aligned (unchecked = mixed subjects)">Aligned</th><th class="r">Qs / wk</th><th></th></tr></thead><tbody id="qtBody"></tbody></table></div>
+        <p class="hint" id="qtTotal" style="margin:0"></p>
       </section>
 
       <section class="panel stack">
@@ -250,13 +281,13 @@
 
 <footer class="foot"><div class="wrap"><p style="margin:0" id="footNote">Plans are saved in this browser as you edit. The client link carries the whole plan, so nothing is stored on a server.</p><button class="theme-btn" id="themeBtn" type="button">Dark mode</button></div></footer>
 
-<script src="anki-tags.js?v=20261014j"></script>
-<script src="resources.js?v=20261014j"></script>
-<script src="supplements.js?v=20261014j"></script>
-<script src="engine.js?v=20261014j"></script>
-<script src="sync-config.js?v=20261014j"></script>
-<script src="sync.js?v=20261014j"></script>
-<script src="ui.js?v=20261014j"></script>
+<script src="anki-tags.js?v=20261014k"></script>
+<script src="resources.js?v=20261014k"></script>
+<script src="supplements.js?v=20261014k"></script>
+<script src="engine.js?v=20261014k"></script>
+<script src="sync-config.js?v=20261014k"></script>
+<script src="sync.js?v=20261014k"></script>
+<script src="ui.js?v=20261014k"></script>
 <script>
 (function () {
   const P = window.P520, UI = window.P520UI;
@@ -292,7 +323,22 @@
       : "Under each of this plan's " + n + " Khan P/S units: the matching pages, linked to open on the first one.";
   }
 
+  let legacyNote = false;
+  $("aamcList").innerHTML = P.AAMC.map(a => {
+    const n = a.parts.reduce((x, p) => x + p[1], 0);
+    return '<label><input type="checkbox" id="aamc_' + a.key + '"><span>' + P.esc(a.label) + "<small>" + n + " Qs" + (a.note ? " · " + P.esc(a.note.replace(/^\d+ /, "")) : a.parts.length > 1 ? " · " + a.parts.map(p => p[0]).join(", ") : "") + "</small></span></label>";
+  }).join("");
+  // Weeks for the ramp selects: "Week 9 · Nov 8 (practice)"
+  function weekOpts(sel, autoText, cur, maxW, startN) {
+    let h = '<option value="">' + P.esc(autoText) + "</option>";
+    for (let w = 1; w <= maxW; w++) h += '<option value="' + w + '">Week ' + w + (startN != null ? " · " + P.shortDate(startN + (w - 1) * 7) : "") + (w === plan.contentWeeks ? " (last content week)" : w === plan.contentWeeks + 1 ? " (first practice week)" : "") + "</option>";
+    $(sel).innerHTML = h;
+    $(sel).value = cur == null ? "" : String(cur);
+    if ($(sel).value === "" && cur != null) $(sel).value = "";
+  }
+
   function fill() {
+    legacyNote = false;
     $("kaNotes").value = plan.kaNotes || "ka300";
     $("name").value = plan.name || "";
     $("target").value = plan.target || "";
@@ -314,11 +360,22 @@
       $("p4" + i).checked = !!plan.carsP4[i];
       $("p57" + i).checked = !!plan.carsP57[i];
     }
-    $("qtBody").innerHTML = plan.qtable.map((r, i) =>
-      "<tr><td class=\"num\">" + (i + 1) + '</td><td><input type="number" min="1" id="qq' + i + '" value="' + r.q + '" aria-label="Row ' + (i + 1) + ' questions per block"></td>' +
-      '<td><input type="number" min="1" id="qb' + i + '" value="' + r.b + '" aria-label="Row ' + (i + 1) + ' blocks per day"></td>' +
-      '<td><input type="checkbox" id="qa' + i + '"' + (r.aligned ? " checked" : "") + ' aria-label="Row ' + (i + 1) + ' content-aligned"></td>' +
-      '<td class="r" id="qw' + i + '"></td></tr>').join("");
+    if (!plan.qramp) {
+      // Plan made with the old 8-row table: start the new ramp from its first and last rows
+      const t = plan.qtable || [];
+      plan.qramp = Object.assign(JSON.parse(JSON.stringify(P.DEFAULT_PLAN.qramp)), { start: (t[0] || {}).q || 10, full: Math.max(...t.map(r => +r.q || 0), 10) });
+      plan.aamc = P.DEFAULT_PLAN.aamc.slice();
+      legacyNote = true;
+    }
+    $("rqStart").value = plan.qramp.start;
+    $("rqFull").value = plan.qramp.full;
+    $("rqBlocks").value = String(plan.qramp.blocksPractice || 1);
+    P.AAMC.forEach(a => $("aamc_" + a.key).checked = (plan.aamc || []).includes(a.key));
+    { const s0 = P.buildSchedule(plan, 1);  // fill the week pickers so read() keeps the saved weeks
+      if (s0.ramp && !s0.ramp.legacy) {
+        weekOpts("rqFullWeek", "Automatic", plan.qramp.fullWeek, Math.max(s0.weeks.length, plan.qramp.fullWeek || 0), s0.D.week1Sun);
+        weekOpts("rqMixed", "Automatic", plan.qramp.mixedWeek, Math.max(plan.contentWeeks + 1, plan.qramp.mixedWeek || 0), s0.D.week1Sun);
+      } }
   }
 
   function read() {
@@ -344,7 +401,13 @@
       plan.carsP4[i] = $("p4" + i).checked;
       plan.carsP57[i] = $("p57" + i).checked;
     }
-    plan.qtable = plan.qtable.map((r, i) => ({ q: Math.max(0, +$("qq" + i).value || 0), b: Math.max(0, +$("qb" + i).value || 0), aligned: $("qa" + i).checked }));
+    plan.qramp = plan.qramp || JSON.parse(JSON.stringify(P.DEFAULT_PLAN.qramp));
+    plan.qramp.start = Math.max(1, Math.round(+$("rqStart").value) || 10);
+    plan.qramp.full = Math.max(1, Math.round(+$("rqFull").value) || 59);
+    plan.qramp.fullWeek = $("rqFullWeek").value ? +$("rqFullWeek").value : null;
+    plan.qramp.mixedWeek = $("rqMixed").value ? +$("rqMixed").value : null;
+    plan.qramp.blocksPractice = +$("rqBlocks").value || 1;
+    plan.aamc = P.AAMC.filter(a => $("aamc_" + a.key).checked).map(a => a.key);
   }
 
   const VIEW_HINT = {
@@ -410,6 +473,73 @@
       : '<span class="hint">None</span>';
   }
 
+  function renderRamp(sched) {
+    const R = sched.ramp, D = sched.D, A = sched.aamc;
+    if (!R || R.legacy) return;
+    const nW = sched.weeks.length;
+    weekOpts("rqFullWeek", "Automatic: week " + R.autoFull + (A.firstWeek && R.autoFull === A.firstWeek ? " (AAMC starts)" : ""), plan.qramp.fullWeek, Math.max(nW, plan.qramp.fullWeek || 0), D.week1Sun);
+    weekOpts("rqMixed", "Automatic: week " + R.autoMixed, plan.qramp.mixedWeek, Math.max(plan.contentWeeks + 1, plan.qramp.mixedWeek || 0), D.week1Sun);
+    const r = plan.qramp;
+    $("rqHint").textContent = (legacyNote ? "This plan used the old ramp table, so it now starts from that table's first and last rows. Check the weeks below before saving. " : "") +
+      "Blocks grow from " + r.start + " to " + r.full + " Qs by week " + R.fullWeek + ", one block a day during content review" +
+      (r.blocksPractice > 1 ? " and " + r.blocksPractice + " a day after it" : "") + ". Content-aligned until week " + R.mixedWeek + ", mixed after" + (plan.qramp.mixedWeek ? "." : " (automatic: the week after every subject has been started).");
+    $("rqWarn").hidden = !A.lateRamp;
+    $("rqWarn").textContent = A.lateRamp ? "Blocks aren't full until week " + R.fullWeek + ", after the AAMC questions start in week " + A.firstWeek + ". Pick an earlier week, or Automatic." : "";
+    const days = A.days, any = (plan.aamc || []).length;
+    $("aamcHint").textContent = !any ? "No AAMC questions in this plan." : !days ? "No question bank days after content review to put them on." :
+      A.qs.toLocaleString() + " AAMC Qs over " + days + " study days, " + P.shortDate(A.first) + " – " + P.shortDate(A.last) +
+      ", in the order listed and ending before the final stretch. These days are all AAMC" + (r.blocksPractice > 1 ? ", " + r.blocksPractice + " sets a day." : ", one set a day.");
+    $("aamcWarn").hidden = !A.missing.length;
+    $("aamcWarn").textContent = A.missing.length ? "Not enough question bank days after content review for all of it, so this is left out: " + A.missing.join(", ") + ". Fewer content weeks, a later test date or 2 blocks a day would make room." : "";
+    // Week table
+    const focus = document.activeElement && document.activeElement.closest && document.activeElement.closest("#qtBody") ? document.activeElement.id : null;
+    let total = 0;
+    let divided = false;
+    $("qtBody").innerHTML = sched.weeks.filter(w => w.anyInRange).map(w => {
+      const q = R.week(w.num), ov = !!r.overrides[w.num];
+      const qd = w.days.filter(d => d.kind === "study" && d.practice && d.practice.type === "qbank");
+      const qs = qd.reduce((a, d) => a + d.practice.q * d.practice.blocks, 0);
+      const aDays = qd.filter(d => d.aamc);
+      const aQs = aDays.reduce((a, d) => a + d.aamc.reduce((x, y) => x + y.q, 0), 0);
+      total += qs;
+      let pre = "";
+      if (w.phase === "practice" && !divided) { divided = true; pre = '<tr class="divider"><td colspan="6">After content review</td></tr>'; }
+      return pre + '<tr class="' + (ov ? "ov" : "") + '"><td class="wkd">' + w.num + "<small>" + P.shortDate(w.days[0].n) + "</small></td>" +
+        '<td><input type="number" min="0" max="200" id="wq' + w.num + '" data-w="' + w.num + '" data-f="q" value="' + q.q + '" aria-label="Week ' + w.num + ' Qs per block"></td>' +
+        '<td><input type="number" class="qb-n" min="0" max="3" id="wb' + w.num + '" data-w="' + w.num + '" data-f="b" value="' + q.b + '" aria-label="Week ' + w.num + ' blocks a day"></td>' +
+        '<td><input type="checkbox" id="wa' + w.num + '" data-w="' + w.num + '" data-f="aligned"' + (q.aligned ? " checked" : "") + ' aria-label="Week ' + w.num + ' content-aligned"></td>' +
+        '<td class="r num">' + (qs + aQs).toLocaleString() + (aDays.length ? "<small>" + aDays.length + " AAMC day" + (aDays.length === 1 ? "" : "s") + "</small>" : "") + "</td>" +
+        "<td>" + (ov ? '<button class="reset" type="button" data-reset="' + w.num + '" aria-label="Reset week ' + w.num + '">Reset</button>' : "") + "</td></tr>";
+    }).join("");
+    if (focus && $(focus)) $(focus).focus();
+    $("qtTotal").textContent = "Total: " + total.toLocaleString() + " " + plan.qbank + " Qs" + (A.qs ? " and " + A.qs.toLocaleString() + " AAMC Qs" : "") + ". Qs / wk counts study days only; full-length days have no question bank.";
+  }
+  // Week overrides: kept only where they differ from the ramp settings
+  $("qtBody").addEventListener("input", e => e.stopPropagation());
+  $("qtBody").addEventListener("change", e => {
+    e.stopPropagation();
+    const el = e.target, w = +el.dataset.w, f = el.dataset.f;
+    if (!w || !f) return;
+    const sched = P.buildSchedule(plan, 1), base = sched.ramp.base(w);
+    const o = Object.assign({}, plan.qramp.overrides[w] || {});
+    const v = f === "aligned" ? el.checked : Math.max(0, Math.round(+el.value) || 0);
+    if (v === base[f]) delete o[f]; else o[f] = v;
+    if (Object.keys(o).length) plan.qramp.overrides[w] = o; else delete plan.qramp.overrides[w];
+    if (ci) ci.saved = false;
+    update();
+  });
+  // pointerdown as well as click: a field's change event can re-draw the table between press and release
+  function resetWeek(e) {
+    const b = e.target.closest("[data-reset]");
+    if (!b || !plan.qramp.overrides[+b.dataset.reset]) return;
+    e.preventDefault();
+    delete plan.qramp.overrides[+b.dataset.reset];
+    if (ci) ci.saved = false;
+    update();
+  }
+  $("qtBody").addEventListener("pointerdown", resetWeek);
+  $("qtBody").addEventListener("click", resetWeek);
+
   function update() {
     read();
     P.store.set(P.KEY_COACH, plan);
@@ -433,7 +563,7 @@
     const sched = P.buildSchedule(eff, +$("pvPhase").value || 1);
     const D = sched.D;
     const dpw = D.daysPerWk;
-    plan.qtable.forEach((r, i) => $("qw" + i).textContent = (r.q * r.b * dpw).toLocaleString());
+    renderRamp(sched);
 
     const n4 = plan.carsP4.filter(Boolean).length, n57 = plan.carsP57.filter(Boolean).length;
     // Full lengths fall on the full-length day and the review on the day after; CARS is skipped on both.
@@ -462,7 +592,7 @@
       [sched.totals.chapters + " ch", D.res.label + ", " + perDay.toFixed(1) + (mixed ? " Kaplan-size ch / study day" : " / study day")],
       ["Week " + D.aamcStartWk, "CARS switches to AAMC"],
       [sched.totals.fls, "Practice full lengths"],
-      [sched.totals.qs.toLocaleString(), "Total Qs scheduled"],
+      [sched.totals.qs.toLocaleString() + (sched.aamc.qs ? " + " + sched.aamc.qs.toLocaleString() : ""), plan.qbank + " Qs" + (sched.aamc.qs ? " + AAMC Qs" : "") + " scheduled"],
       [{ daily: "Daily", weekly: "Weekly", phase: "Phase" }[plan.view] || "Daily", "Plan style"],
       [Math.max(0, D.test - P.todayDn()), "Days until test"]
     ].map(([b, s]) => '<div class="stat"><b>' + P.esc(b) + "</b><span>" + P.esc(s) + "</span></div>").join("") :
@@ -495,7 +625,10 @@
           const pr = d.practice;
           if (pr.type === "fl") c += '<span class="line fl">Practice Full Length</span>';
           else if (pr.type === "review") c += '<span class="line rv">Full Length Review</span>';
-          else c += '<span class="line qb">QBank: ' + P.esc(pr.text) + (pr.aligned ? " (aligned)" : " (mixed)") + "</span>";
+          else {
+            if (pr.blocks) c += '<span class="line qb">QBank: ' + P.esc(pr.text) + (pr.aligned ? " (aligned)" : " (mixed)") + "</span>";
+            (d.aamc || []).forEach(x => c += '<span class="line aamc">AAMC: ' + P.esc(x.label + (x.part ? " · " + x.part : "") + " · " + x.q + " Qs") + "</span>");
+          }
         }
         h += '<td class="' + d.kind + (d.catchUp ? " cu" : "") + '">' + c + "</td>";
       }

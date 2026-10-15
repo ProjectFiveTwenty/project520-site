@@ -41,7 +41,14 @@
     qbank: "UWorld",
     deck: "anking",              // Anki deck the client uses: anking | captainhook | miledown
     kaNotes: "ka300",            // KA P/S notes under Khan Academy Behavioral units: ka300 | ka86 | off
-    qtable: [                    // index 1..8: Qs per block, blocks per day, content-aligned
+    // Question bank ramp. The block grows from `start` to `full` Qs by week `fullWeek` (null =
+    // two weeks after content review, and never after the AAMC track starts). One block a day
+    // during content review; `blocksPractice` after it. Content-aligned until `mixedWeek` (null =
+    // the week after every subject has been started). overrides: { week: { q, b, aligned } }.
+    qramp: { start: 10, full: 59, fullWeek: null, blocksPractice: 1, mixedWeek: null, overrides: {} },
+    // AAMC official material, scheduled in this order and as late as possible (see AAMC below)
+    aamc: ["flash", "qpBio1", "qpBio2", "qpChem", "qpPhys", "sb1", "sb2"],
+    qtable: [                    // OLD ramp, kept for plans made before qramp: rows 1..8
       { q: 10, b: 1, aligned: true },
       { q: 15, b: 1, aligned: true },
       { q: 20, b: 1, aligned: true },
@@ -72,6 +79,32 @@
     const t = dn(plan.test);
     return t == null ? 0 : wd(t);
   }
+  /* ---------- AAMC official question material ---------- */
+  // Each part is split into sets of about one full block (a set may run 1 over, so 120 = 2 × 60).
+  const AAMC = [
+    { key: "flash", label: "Independent Question Bank", note: "150 discrete Qs, all six subjects", parts: [["", 150]] },
+    { key: "qpBio1", label: "Biology Question Pack Vol. 1", parts: [["", 120]] },
+    { key: "qpBio2", label: "Biology Question Pack Vol. 2", parts: [["", 120]] },
+    { key: "qpChem", label: "Chemistry Question Pack", parts: [["", 120]] },
+    { key: "qpPhys", label: "Physics Question Pack", parts: [["", 120]] },
+    { key: "sb1", label: "Section Bank Vol. 1", parts: [["Bio/Biochem", 100], ["Chem/Phys", 100], ["Psych/Soc", 100]] },
+    { key: "sb2", label: "Section Bank Vol. 2", parts: [["Bio/Biochem", 100], ["Chem/Phys", 100], ["Psych/Soc", 100]] }
+  ];
+  function aamcSets(keys, block) {
+    const sets = [];
+    AAMC.forEach(a => {
+      if (!keys.includes(a.key)) return;
+      a.parts.forEach(([part, n]) => {
+        const k = Math.max(1, Math.ceil(n / (block + 1)));
+        for (let i = 0; i < k; i++) {
+          const q = Math.floor(n / k) + (i < n % k ? 1 : 0);
+          sets.push({ key: a.key, label: a.label, part, q, i: i + 1, of: k });
+        }
+      });
+    });
+    return sets;
+  }
+
   function normalizePlan(p) {
     const base = JSON.parse(JSON.stringify(DEFAULT_PLAN));
     const out = Object.assign(base, p || {});
@@ -81,6 +114,20 @@
     out.resourceBySubject = out.resourceBySubject && typeof out.resourceBySubject === "object" ? out.resourceBySubject : {};
     out.kaNotes = out.kaNotes === "ka86" || out.kaNotes === "off" ? out.kaNotes : out.kaNotes === false ? "off" : "ka300";
     out.history = Array.isArray(out.history) ? out.history : [];
+    // Plans made before the new ramp keep the old table (and no AAMC track) until the coach updates them
+    if (p && p.qtable && !p.qramp) { out.qramp = null; out.aamc = Array.isArray(p.aamc) ? p.aamc : []; }
+    else {
+      const r = Object.assign({}, DEFAULT_PLAN.qramp, out.qramp || {});
+      r.start = Math.max(1, Math.round(+r.start) || 10);
+      r.full = Math.max(1, Math.round(+r.full) || 59);
+      if (r.start > r.full) r.start = r.full;
+      r.fullWeek = r.fullWeek == null || r.fullWeek === "" ? null : Math.max(1, Math.round(+r.fullWeek) || 1);
+      r.mixedWeek = r.mixedWeek == null || r.mixedWeek === "" ? null : Math.max(1, Math.round(+r.mixedWeek) || 1);
+      r.blocksPractice = Math.max(1, Math.min(3, Math.round(+r.blocksPractice) || 1));
+      r.overrides = r.overrides && typeof r.overrides === "object" ? r.overrides : {};
+      out.qramp = r;
+      out.aamc = Array.isArray(out.aamc) ? out.aamc.filter(k => AAMC.some(a => a.key === k)) : [];
+    }
     if (out.baseline && !out.baseline.date) out.baseline = null;
     if (!out.id) out.id = makeId();
     return out;
@@ -252,6 +299,48 @@
 
   /* ---------- The schedule (Schedule tab) ---------- */
   // carsPhase: 1..7 (from the client's CARS log).
+  // Week-by-week question bank settings: { week(w) -> {q, b, aligned, auto, overridden}, ... }
+  function qrampInfo(plan, X) {
+    const { cw, totalWeeks, week1Sun, pool, dayOf, poolDayList } = X;
+    if (!plan.qramp) {
+      // Old 8-row table: content weeks squeezed onto rows 1-4, then one row per week up to row 8
+      return { legacy: true, week(w) {
+        const qIdx = w <= cw ? Math.round(1 + (w - 1) * 3 / Math.max(1, cw - 1)) : Math.min(8, 4 + (w - cw));
+        const r = plan.qtable[Math.max(1, Math.min(8, qIdx)) - 1] || { q: 0, b: 0, aligned: false };
+        return { q: +r.q || 0, b: +r.b || 0, aligned: !!r.aligned };
+      } };
+    }
+    const r = plan.qramp;
+    // Auto mixed week: the week after the one where every subject has had a chapter
+    const subjects = new Set(pool.map(c => c.subject)), seen = new Set();
+    let allBy = null;
+    const byDay = pool.slice().sort((a, b) => dayOf.get(a.id) - dayOf.get(b.id));
+    for (const c of byDay) {
+      seen.add(c.subject);
+      if (seen.size === subjects.size) { const n = poolDayList[dayOf.get(c.id) - 1]; if (n != null) allBy = Math.floor((n - week1Sun) / 7) + 1; break; }
+    }
+    const autoMixed = Math.min(cw + 1, (allBy || cw) + 1);
+    const mixedWeek = r.mixedWeek || autoMixed;
+    // Auto full week: two weeks after content review (moved earlier later if the AAMC track starts sooner)
+    let autoFull = Math.max(1, cw + 2);
+    let fullWeek = r.fullWeek || autoFull;
+    const round5 = x => Math.round(x / 5) * 5;
+    function base(w) {
+      let q;
+      if (w >= fullWeek || fullWeek <= 1) q = r.full;
+      else q = Math.min(r.full, Math.max(r.start, round5(r.start + (r.full - r.start) * (w - 1) / (fullWeek - 1))));
+      return { q, b: w <= cw ? 1 : r.blocksPractice, aligned: w < mixedWeek && w <= cw };
+    }
+    return { legacy: false, get fullWeek() { return fullWeek; }, get autoFull() { return autoFull; }, mixedWeek, autoMixed, base,
+      capAutoFull(w) { if (w < autoFull) autoFull = Math.max(1, w); if (!r.fullWeek) fullWeek = autoFull; },
+      week(w) {
+        const b0 = base(w), o = r.overrides[w];
+        if (!o) return b0;
+        return { q: o.q != null ? Math.max(0, +o.q || 0) : b0.q, b: o.b != null ? Math.max(0, +o.b || 0) : b0.b,
+          aligned: o.aligned != null ? !!o.aligned : b0.aligned, overridden: true };
+      } };
+  }
+
   function buildSchedule(plan, carsPhase) {
     const D = derive(plan);
     const { start, test, queue, studyDays, daysPerWk, totalWeeks, aamcStartWk, week1Sun, startOffset, offSet } = D;
@@ -312,12 +401,11 @@
       if (n <= test - 7) { flSet.add(n); reviewSet.add(n + 1); }
     }
     let totalQs = 0, fls = 0;
+    const ramp = qrampInfo(plan, { cw, totalWeeks, week1Sun, test, flSet, studyDays, offSet, start, pool, dayOf, poolDayList });
 
     for (let w = 1; w <= totalWeeks; w++) {
       const days = [];
-      // QBank ramp (q_idx)
-      const qIdx = w <= cw ? Math.round(1 + (w - 1) * 3 / Math.max(1, cw - 1)) : Math.min(8, 4 + (w - cw));
-      const qrow = plan.qtable[Math.max(1, Math.min(8, qIdx)) - 1] || { q: 0, b: 0, aligned: false };
+      const qrow = ramp.week(w);
       let anyInRange = false;
       for (let c = 0; c < 7; c++) {
         const n = week1Sun + (w - 1) * 7 + c;
@@ -372,8 +460,47 @@
         d.kind = "open"; d.am = []; d.pm = []; d.cars = null; d.practice = null;
       }
     }));
+    // AAMC track: as late as possible on question-bank days after content review (never in the
+    // final stretch). An AAMC day is all AAMC: its blocks are AAMC sets instead of the question
+    // bank, so a plan with 2 blocks a day stacks 2 AAMC sets and finishes the track in about half
+    // the days.
+    const aamc = { sets: 0, placed: 0, qs: 0, missing: [], first: null, last: null, days: 0 };
+    if (plan.qramp && (plan.aamc || []).length) {
+      const sets = aamcSets(plan.aamc, plan.qramp.full);
+      const per = Math.max(1, plan.qramp.blocksPractice || 1);
+      const groups = [];
+      for (let i = 0; i < sets.length; i += per) groups.push(sets.slice(i, i + per));
+      const eligible = [];
+      weeks.forEach(w => { if (w.num > cw) w.days.forEach(d => { if (d.kind === "study" && d.practice && d.practice.type === "qbank") eligible.push(d); }); });
+      aamc.sets = sets.length;
+      const skipN = Math.max(0, groups.length - eligible.length);
+      groups.slice(0, skipN).forEach(g => g.forEach(x => { if (!aamc.missing.includes(x.label)) aamc.missing.push(x.label); }));
+      const use = groups.slice(skipN), days = eligible.slice(eligible.length - use.length);
+      use.forEach((g, i) => {
+        const d = days[i], pr = d.practice;
+        d.aamc = g;
+        aamc.placed += g.length; g.forEach(x => aamc.qs += x.q);
+        totalQs -= pr.q * pr.blocks; pr.blocks = 0; pr.text = "";
+      });
+      aamc.days = days.length;
+      if (days.length) { aamc.first = days[0].n; aamc.last = days[days.length - 1].n; }
+    }
+    // Blocks should be full by the time the AAMC track starts
+    if (aamc.first != null && !ramp.legacy) {
+      const aw = Math.floor((aamc.first - week1Sun) / 7) + 1;
+      aamc.firstWeek = aw;
+      if (aw < ramp.fullWeek) {
+        ramp.capAutoFull(aw);
+        weeks.forEach(w => { if (w.num >= aw) return; const qr = ramp.week(w.num); w.days.forEach(d => {
+          if (d.kind === "study" && d.practice && d.practice.type === "qbank") {
+            totalQs += (qr.q - d.practice.q) * d.practice.blocks; d.practice.q = qr.q;
+            d.practice.text = d.practice.blocks + (d.practice.blocks === 1 ? " block of " : " blocks of ") + qr.q + " Qs";
+          } }); });
+      }
+      aamc.lateRamp = ramp.fullWeek > aw;
+    }
     const contentDaysLeft = R != null ? poolDays : totalContentDays;
-    return { weeks, D, totals: {
+    return { weeks, D, ramp, aamc, totals: {
       qs: totalQs, fls, contentDays: totalContentDays, chapters: N - (plan.dropped || []).length,
       remaining: PN, contentDaysLeft, perDayLeft: contentDaysLeft ? PN / contentDaysLeft : Infinity,
       unplaced: contentDaysLeft ? 0 : PN, contentEnd, replanDate: R,
@@ -660,7 +787,7 @@
 
   window.P520 = {
     dn, iso, wd, md, longDate, shortDate, todayDn, DOW, DOW3,
-    DEFAULT_PLAN, normalizePlan, flWeekday, SUBJECTS, subjectResource, isMixed, planChapters, resourceSummary, encodePlan, decodePlan, derive, buildSchedule, makeId,
+    DEFAULT_PLAN, normalizePlan, AAMC, aamcSets, flWeekday, SUBJECTS, subjectResource, isMixed, planChapters, resourceSummary, encodePlan, decodePlan, derive, buildSchedule, makeId,
     CARS_PHASES, CARS_SOURCES, carsRowPasses, carsProgress, carsPhaseByDay,
     FL_SOURCES, FL_SECTIONS, ankiQuery, ankiSubjectQuery, DECKS, deckLabel, chapterTag, deckCoverage,
     store, KEY_PLAN, KEY_COACH, keyCars, keyFL, keyProgress, loadProgress, saveProgress, loadClientPlan, planLinkSuffix,

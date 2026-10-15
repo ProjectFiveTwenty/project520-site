@@ -199,7 +199,14 @@
     const pr = d.practice, key = d.iso + ":p";
     if (pr.type === "fl") return itemTask(key, "k-fl", "Full length", "Practice full length" + (label ? " · " + label : ""), "Log scores after");
     if (pr.type === "review") return itemTask(key, "k-review", "Full length", "Full length review" + (label ? " · " + label : ""), "");
-    return itemTask(key, "k-qbank", qbankName, (label ? label + ": " : "") + pr.text, pr.aligned ? "Content-aligned" : "Mixed subjects");
+    let html = pr.blocks ? itemTask(key, "k-qbank", qbankName, (label ? label + ": " : "") + pr.text, pr.aligned ? "Content-aligned" : "Mixed subjects") : "";
+    (d.aamc || []).forEach((x, i) => html += aamcTask(d, x, i, label));
+    return html;
+  }
+  // AAMC official questions: one checkbox per set
+  function aamcText(x) { return x.label + (x.part ? " · " + x.part : "") + (x.of > 1 ? " (" + x.i + " of " + x.of + ")" : ""); }
+  function aamcTask(d, x, i, label) {
+    return itemTask(d.iso + ":a" + i, "k-aamc", "AAMC", (label ? label + ": " : "") + aamcText(x), x.q + " Qs");
   }
   function renderDaily() {
     let html = "";
@@ -234,9 +241,10 @@
       }
       // Right: practice, CARS, daily minimums
       let right = "<h3><span>Practice</span></h3><div class=\"wk-list\">";
-      const qdays = study.filter(d => d.practice.type === "qbank");
+      const qdays = study.filter(d => d.practice.type === "qbank" && d.practice.blocks);
       const fl = study.filter(d => d.practice.type !== "qbank");
       fl.forEach(d => right += practiceTask(d, P.longDate(d.n)));
+      study.forEach(d => (d.aamc || []).forEach((x, i) => right += aamcTask(d, x, i, P.DOW3[d.col])));
       if (qdays.length) {
         const q0 = qdays[0].practice;
         right += '<div class="task"><span class="kind k-qbank">' + qbankName + '</span><div class="sub">' + plural(qdays.length, "set", "sets") + " of " + P.esc(q0.text) + " · " +
@@ -318,6 +326,11 @@
     });
     html += '<section class="phase-sec" id="phase-practice"><h2>Full lengths</h2><p class="hint">These dates stay fixed. Review each exam the next day, then log your scores.</p>' +
       '<div class="fl-list">' + fls.map(d => practiceTask(d, P.longDate(d.n))).join("") + "</div></section>";
+    const aDays = [];
+    sched.weeks.forEach(w => w.days.forEach(d => { if (d.aamc) aDays.push(d); }));
+    if (aDays.length) html += '<section class="phase-sec" id="phase-aamc"><h2>AAMC official questions</h2><p class="hint">' + P.shortDate(aDays[0].n) + " – " + P.shortDate(aDays[aDays.length - 1].n) +
+      ". Do them in this order, on or near these dates. On these days they replace " + qbankName + ".</p>" +
+      '<div class="fl-list">' + aDays.map(d => d.aamc.map((x, i) => aamcTask(d, x, i, P.shortDate(d.n))).join("")).join("") + "</div></section>";
     html += '<section class="phase-sec"><h2>Question bank goals</h2><p class="hint">' + qbankName + ". Spread each week's questions however you like.</p>" +
       '<div class="table-scroll"><table class="data qweeks"><thead><tr><th>Week</th><th>Dates</th><th class="r">Questions</th><th>Type</th></tr></thead><tbody>' +
       qweeks.map(x => {
