@@ -386,7 +386,7 @@
         const pg = x[2] ? "pp. " + x[1] + "–" + x[2] : "p. " + x[1];
         return "<li><span>" + P.esc(x[0]) + "</span>" + (s.pageLinks ? supLink(SUP.pageUrl(s, x[1]), pg) : "<span>" + pg + "</span>") + "</li>";
       }).join("") + "</ul>" : "") +
-      '<p class="hint">' + (s.source ? "Shared by " + P.esc(s.by) + " · " + supLink(s.source, P.esc(host(s.source))) : "Hosted at " + P.esc(host(s.url))) + "</p></div>").join("");
+      '<p class="hint">' + (s.source ? "Shared by " + (s.byUrl ? supLink(s.byUrl, P.esc(s.by)) : P.esc(s.by)) + " · " + supLink(s.source, P.esc(host(s.source))) : "Hosted at " + P.esc(host(s.url))) + "</p></div>").join("");
     const sdlg = $("supDlg");
     btn.addEventListener("click", () => { if (sdlg.showModal) sdlg.showModal(); else sdlg.setAttribute("open", ""); });
     $("supClose").addEventListener("click", () => sdlg.close ? sdlg.close() : sdlg.removeAttribute("open"));
