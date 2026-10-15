@@ -120,14 +120,35 @@
     SUBJECTS.forEach(sj => { const k = subjectResource(plan, sj); if (!keys.includes(k)) keys.push(k); });
     if (!keys.includes(primary) && R[primary]) keys.unshift(primary);
     const out = [];
+    const sortedOf = key => R[key].chapters.slice().sort((a, b) => a.order[plan.structure] - b.order[plan.structure]);
+    // Where each subject sits in the primary resource's order (positions 0..1). A subject taken
+    // from another resource fills those same slots, so Classic keeps its subject blocks and
+    // Integrated/Hybrid keep the primary resource's interleaving.
+    const primSorted = R[primary] ? sortedOf(primary) : [];
+    const slots = {};
+    primSorted.forEach((c, i) => (slots[c.subject] = slots[c.subject] || []).push((i + 0.5) / primSorted.length));
     keys.forEach(key => {
       const res = R[key];
       if (!res) return;
-      const sorted = res.chapters.slice().sort((a, b) => a.order[plan.structure] - b.order[plan.structure]);
-      sorted.forEach((c, i) => {
-        if (subjectResource(plan, c.subject) !== key) return;
-        out.push(key === primary ? Object.assign({}, c, { pos: (i + 0.5) / sorted.length })
-          : Object.assign({}, c, { id: key + ":" + c.id, label: res.label + " · " + c.label, source: res.label, pos: (i + 0.5) / sorted.length }));
+      const sorted = sortedOf(key);
+      if (key === primary) {
+        sorted.forEach((c, i) => { if (subjectResource(plan, c.subject) === key) out.push(Object.assign({}, c, { pos: (i + 0.5) / sorted.length })); });
+        return;
+      }
+      const bySubj = {};
+      sorted.forEach(c => { if (subjectResource(plan, c.subject) === key) (bySubj[c.subject] = bySubj[c.subject] || []).push(c); });
+      Object.keys(bySubj).forEach(sj => {
+        const list = bySubj[sj], sl = slots[sj];
+        list.forEach((c, j) => {
+          let pos;
+          if (sl && sl.length) {
+            // spread the n substitute chapters evenly over the subject's m slots
+            const t = list.length === 1 ? (sl.length - 1) / 2 : j * (sl.length - 1) / (list.length - 1);
+            const lo = Math.floor(t), hi = Math.min(sl.length - 1, lo + 1);
+            pos = sl[lo] + (sl[hi] - sl[lo]) * (t - lo);
+          } else pos = (sorted.indexOf(c) + 0.5) / sorted.length;
+          out.push(Object.assign({}, c, { id: key + ":" + c.id, label: res.label + " · " + c.label, source: res.label, pos }));
+        });
       });
     });
     return out.sort((a, b) => a.pos - b.pos || (a.res === primary ? -1 : 0) - (b.res === primary ? -1 : 0));
