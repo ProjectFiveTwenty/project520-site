@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400&display=swap">
-<link rel="stylesheet" href="p520.css?v=20261014k">
+<link rel="stylesheet" href="p520.css?v=20261014l">
 <style>
   .cp { display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); gap: 20px; align-items: start; }
   .side { display: grid; gap: 16px; }
@@ -281,13 +281,13 @@
 
 <footer class="foot"><div class="wrap"><p style="margin:0" id="footNote">Plans are saved in this browser as you edit. The client link carries the whole plan, so nothing is stored on a server.</p><button class="theme-btn" id="themeBtn" type="button">Dark mode</button></div></footer>
 
-<script src="anki-tags.js?v=20261014k"></script>
-<script src="resources.js?v=20261014k"></script>
-<script src="supplements.js?v=20261014k"></script>
-<script src="engine.js?v=20261014k"></script>
-<script src="sync-config.js?v=20261014k"></script>
-<script src="sync.js?v=20261014k"></script>
-<script src="ui.js?v=20261014k"></script>
+<script src="anki-tags.js?v=20261014l"></script>
+<script src="resources.js?v=20261014l"></script>
+<script src="supplements.js?v=20261014l"></script>
+<script src="engine.js?v=20261014l"></script>
+<script src="sync-config.js?v=20261014l"></script>
+<script src="sync.js?v=20261014l"></script>
+<script src="ui.js?v=20261014l"></script>
 <script>
 (function () {
   const P = window.P520, UI = window.P520UI;
@@ -488,7 +488,7 @@
     const days = A.days, any = (plan.aamc || []).length;
     $("aamcHint").textContent = !any ? "No AAMC questions in this plan." : !days ? "No question bank days after content review to put them on." :
       A.qs.toLocaleString() + " AAMC Qs over " + days + " study days, " + P.shortDate(A.first) + " – " + P.shortDate(A.last) +
-      ", in the order listed and ending before the final stretch. These days are all AAMC" + (r.blocksPractice > 1 ? ", " + r.blocksPractice + " sets a day." : ", one set a day.");
+      ", in the order listed and ending before the final stretch. Those days are all AAMC, one set for each block that week has (2 blocks = 2 sets stacked).";
     $("aamcWarn").hidden = !A.missing.length;
     $("aamcWarn").textContent = A.missing.length ? "Not enough question bank days after content review for all of it, so this is left out: " + A.missing.join(", ") + ". Fewer content weeks, a later test date or 2 blocks a day would make room." : "";
     // Week table

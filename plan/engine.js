@@ -461,29 +461,30 @@
       }
     }));
     // AAMC track: as late as possible on question-bank days after content review (never in the
-    // final stretch). An AAMC day is all AAMC: its blocks are AAMC sets instead of the question
-    // bank, so a plan with 2 blocks a day stacks 2 AAMC sets and finishes the track in about half
-    // the days.
+    // final stretch). An AAMC day is all AAMC: each of its blocks is an AAMC set instead of the
+    // question bank, so a week with 2 blocks a day stacks 2 sets a day and gets through the track
+    // in about half the days. Weeks set to 0 blocks get no AAMC either.
     const aamc = { sets: 0, placed: 0, qs: 0, missing: [], first: null, last: null, days: 0 };
     if (plan.qramp && (plan.aamc || []).length) {
       const sets = aamcSets(plan.aamc, plan.qramp.full);
-      const per = Math.max(1, plan.qramp.blocksPractice || 1);
-      const groups = [];
-      for (let i = 0; i < sets.length; i += per) groups.push(sets.slice(i, i + per));
       const eligible = [];
-      weeks.forEach(w => { if (w.num > cw) w.days.forEach(d => { if (d.kind === "study" && d.practice && d.practice.type === "qbank") eligible.push(d); }); });
+      weeks.forEach(w => { if (w.num > cw) w.days.forEach(d => { if (d.kind === "study" && d.practice && d.practice.type === "qbank" && d.practice.blocks > 0) eligible.push(d); }); });
       aamc.sets = sets.length;
-      const skipN = Math.max(0, groups.length - eligible.length);
-      groups.slice(0, skipN).forEach(g => g.forEach(x => { if (!aamc.missing.includes(x.label)) aamc.missing.push(x.label); }));
-      const use = groups.slice(skipN), days = eligible.slice(eligible.length - use.length);
-      use.forEach((g, i) => {
-        const d = days[i], pr = d.practice;
-        d.aamc = g;
-        aamc.placed += g.length; g.forEach(x => aamc.qs += x.q);
-        totalQs -= pr.q * pr.blocks; pr.blocks = 0; pr.text = "";
+      let k = sets.length;               // sets still to place, filled from the last day back
+      const used = [];
+      for (let i = eligible.length - 1; i >= 0 && k > 0; i--) {
+        const d = eligible[i], take = Math.min(k, d.practice.blocks);
+        d.aamc = sets.slice(k - take, k); k -= take;
+        used.unshift(d);
+      }
+      sets.slice(0, k).forEach(x => { if (!aamc.missing.includes(x.label)) aamc.missing.push(x.label); });
+      used.forEach(d => {
+        const pr = d.practice;
+        aamc.placed += d.aamc.length; d.aamc.forEach(x => aamc.qs += x.q);
+        totalQs -= pr.q * pr.blocks; pr.aamcBlocks = pr.blocks; pr.blocks = 0; pr.text = "";
       });
-      aamc.days = days.length;
-      if (days.length) { aamc.first = days[0].n; aamc.last = days[days.length - 1].n; }
+      aamc.days = used.length;
+      if (used.length) { aamc.first = used[0].n; aamc.last = used[used.length - 1].n; }
     }
     // Blocks should be full by the time the AAMC track starts
     if (aamc.first != null && !ramp.legacy) {
