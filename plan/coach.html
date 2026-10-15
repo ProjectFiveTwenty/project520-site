@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400&display=swap">
-<link rel="stylesheet" href="p520.css?v=20261014f">
+<link rel="stylesheet" href="p520.css?v=20261014g">
 <style>
   .cp { display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); gap: 20px; align-items: start; }
   .side { display: grid; gap: 16px; }
@@ -171,6 +171,14 @@
       </section>
 
       <section class="panel stack">
+        <h2>Study resources</h2>
+        <p class="hint" id="libList"></p>
+        <div class="field"><label for="kaNotes">KA P/S notes with Khan Academy P/S units</label>
+          <select id="kaNotes"><option value="ka300">300-page notes (detailed, opens to the page)</option><option value="ka86">86-page notes (condensed, Word document)</option><option value="off">Off</option></select>
+          <p class="hint" id="kaNotesHint"></p></div>
+      </section>
+
+      <section class="panel stack">
         <h2>Question bank ramp</h2>
         <p class="hint">Rows 1–4 spread across the content weeks; after that the ramp moves one row per week, up to row 8.</p>
         <div class="table-scroll"><table class="data qt"><thead><tr><th>#</th><th>Qs / block</th><th>Blocks / day</th><th>Aligned</th><th class="r">Qs / week</th></tr></thead><tbody id="qtBody"></tbody></table></div>
@@ -242,12 +250,13 @@
 
 <footer class="foot"><div class="wrap"><p style="margin:0" id="footNote">Plans are saved in this browser as you edit. The client link carries the whole plan, so nothing is stored on a server.</p><button class="theme-btn" id="themeBtn" type="button">Dark mode</button></div></footer>
 
-<script src="anki-tags.js?v=20261014f"></script>
-<script src="resources.js?v=20261014f"></script>
-<script src="engine.js?v=20261014f"></script>
-<script src="sync-config.js?v=20261014f"></script>
-<script src="sync.js?v=20261014f"></script>
-<script src="ui.js?v=20261014f"></script>
+<script src="anki-tags.js?v=20261014g"></script>
+<script src="resources.js?v=20261014g"></script>
+<script src="supplements.js?v=20261014g"></script>
+<script src="engine.js?v=20261014g"></script>
+<script src="sync-config.js?v=20261014g"></script>
+<script src="sync.js?v=20261014g"></script>
+<script src="ui.js?v=20261014g"></script>
 <script>
 (function () {
   const P = window.P520, UI = window.P520UI;
@@ -273,7 +282,18 @@
     $("bySubject").open = $("bySubject").open || P.isMixed(plan);
   }
 
+  const SUP = window.P520_SUPPLEMENTS;
+  $("libList").textContent = "Every client can open these from Study resources on their calendar: " + SUP.LIBRARY.map(x => x.title).join(", ") + ".";
+  function supHints() {
+    const n = P.planChapters(plan).filter(c => c.res === "khanacademy" && c.subject === "Behavioral").length;
+    $("kaNotesHint").textContent = !n ? "Only used when Behavioral comes from Khan Academy (Customize by subject). Both documents are always in Study resources."
+      : plan.kaNotes === "off" ? "Nothing listed under chapters. Both documents are still in Study resources."
+      : plan.kaNotes === "ka86" ? "Under each of this plan's " + n + " Khan P/S units: the heading to search for in the Word document."
+      : "Under each of this plan's " + n + " Khan P/S units: the matching pages, linked to open on the first one.";
+  }
+
   function fill() {
+    $("kaNotes").value = plan.kaNotes || "ka300";
     $("name").value = plan.name || "";
     $("target").value = plan.target || "";
     $("start").value = plan.start || "";
@@ -313,6 +333,7 @@
     plan.contentWeeks = +$("contentWeeks").value;
     plan.qbank = $("qbank").value;
     plan.deck = $("deck").value || "anking";
+    plan.kaNotes = $("kaNotes").value;
     plan.view = $("view").value;
     plan.tier = $("tier").value;
     plan.finalNote = $("finalNote").value;
@@ -395,6 +416,7 @@
     $("title").textContent = plan.name ? plan.name + "’s study plan" : "Build a study plan";
     plan.rev = Date.now();
     $("viewHint").textContent = VIEW_HINT[plan.view] || "";
+    supHints();
     { const keep = plan.deck; fillDecks(); $("deck").value = keep; plan.deck = $("deck").value || "anking"; $("deckHint").textContent = deckHint(); }
     {
       const s0 = P.buildSchedule(plan, 1);

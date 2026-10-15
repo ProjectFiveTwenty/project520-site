@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400&display=swap">
-<link rel="stylesheet" href="p520.css?v=20261014f">
+<link rel="stylesheet" href="p520.css?v=20261014g">
 <style>
   .toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding-block: 8px 18px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
 
@@ -57,6 +57,24 @@
   .anki-row .kind { align-items: flex-start; line-height: 1.35; padding-top: 7px; }
   .anki-row .kind::before { margin-top: 0.2em; }
   .stack-sm { display: grid; gap: 14px; max-height: 60vh; overflow-y: auto; }
+
+  /* supplements under a chapter */
+  .sup-list { display: grid; gap: 4px; margin: -2px 0 2px 22px; }
+  .day .task.cont + .sup-list, .day .task + .sup-list { margin-top: -4px; }
+  .sup { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px; align-items: start; font-size: 0.76rem; line-height: 1.35; color: var(--muted); overflow-wrap: anywhere; }
+  .sup input { margin: 1px 0 0; width: 13px; height: 13px; accent-color: var(--green); cursor: pointer; }
+  .sup b { font-weight: 600; color: var(--ink); }
+  .sup.done b { color: var(--muted); text-decoration: line-through; }
+  .sup a { color: var(--accent); }
+  .shelf-item { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: grid; gap: 6px; }
+  .shelf-item h3 { font-size: 0.95rem; }
+  .shelf-item p { margin: 0; font-size: 0.88rem; }
+  .shelf-item p.hint { font-size: 0.8rem; }
+  .shelf-top { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: start; }
+  .shelf-extra { list-style: none; margin: 2px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 2px 18px; font-size: 0.84rem; }
+  .shelf-extra li { display: flex; justify-content: space-between; gap: 10px; border-bottom: 1px dashed var(--line); padding: 3px 0; }
+  .shelf-extra li > :last-child { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .shelf-extra li > a:last-child { color: var(--accent); }
 
   /* milestones */
   .milestones { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; margin-bottom: 14px; }
@@ -130,12 +148,23 @@
   </div>
 </dialog>
 
-<script src="anki-tags.js?v=20261014f"></script>
-<script src="resources.js?v=20261014f"></script>
-<script src="engine.js?v=20261014f"></script>
-<script src="sync-config.js?v=20261014f"></script>
-<script src="sync.js?v=20261014f"></script>
-<script src="ui.js?v=20261014f"></script>
-<script src="calendar-view.js?v=20261014f"></script>
+<dialog id="supDlg" aria-labelledby="supTitle">
+  <div class="dlg-head">
+    <div><h2 id="supTitle" style="font-size:1.05rem">Study resources</h2><div class="hint">Use them whenever they help. Each opens in a new tab.</div></div>
+    <button class="btn btn-plain btn-sm" id="supClose" type="button">Close</button>
+  </div>
+  <div class="dlg-body">
+    <div id="supList" class="stack-sm"></div>
+  </div>
+</dialog>
+
+<script src="anki-tags.js?v=20261014g"></script>
+<script src="resources.js?v=20261014g"></script>
+<script src="supplements.js?v=20261014g"></script>
+<script src="engine.js?v=20261014g"></script>
+<script src="sync-config.js?v=20261014g"></script>
+<script src="sync.js?v=20261014g"></script>
+<script src="ui.js?v=20261014g"></script>
+<script src="calendar-view.js?v=20261014g"></script>
 </body>
 </html>

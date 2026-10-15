@@ -40,6 +40,12 @@
   const placed = new Set();
   sched.weeks.forEach(w => w.days.forEach(d => { if (d.am) d.am.concat(d.pm).forEach(c => placed.add(c.id)); }));
   const VIEW_NAME = { daily: "Day-by-day plan", weekly: "Weekly plan", phase: "Phase plan" };
+  // Study resources: the whole supplement library, for every plan. The one exception: the KA P/S
+  // notes are listed under each Khan Academy Behavioral unit, since they follow those videos.
+  const SUP = window.P520_SUPPLEMENTS;
+  const supOn = SUP ? SUP.LIBRARY : [];
+  const kaNotes = SUP && (plan.kaNotes === "ka86" || plan.kaNotes === "off") ? plan.kaNotes : "ka300";
+  const kaNotesOn = !!SUP && kaNotes !== "off";
 
   /* ---------- Header ---------- */
   head.innerHTML =
@@ -111,7 +117,31 @@
     // No label: a further chapter listed under the AM or PM heading above it
     return '<label class="task check' + (done ? " done" : "") + (label ? "" : " cont") + '">' + (label ? '<span class="kind k-content">' + label + "</span>" : "") +
       '<span class="what"><input type="checkbox" data-ch="' + c.id + '"' + (done ? " checked" : "") + ' aria-label="Done: ' + P.esc(c.label) + '">' +
-      '<span><span class="subj">' + subj(c) + (extra ? " · " + extra : "") + "</span>" + P.esc(c.topic) + "</span></span></label>";
+      '<span><span class="subj">' + subj(c) + (extra ? " · " + extra : "") + "</span>" + P.esc(c.topic) + "</span></span></label>" + supplementRows(c);
+  }
+  // "pp. 9–17, 18–27" from sections, merging ranges that touch
+  function pageRanges(secs) {
+    const r = secs.filter(x => x[1]).map(x => [x[1], x[2] || x[1]]).sort((a, b) => a[0] - b[0]);
+    const out = [];
+    r.forEach(x => { const l = out[out.length - 1]; if (l && x[0] <= l[1] + 1) l[1] = Math.max(l[1], x[1]); else out.push(x.slice()); });
+    return out;
+  }
+  const rangeText = r => r[0] === r[1] ? String(r[0]) : r[0] + "–" + r[1];
+  const supLink = (href, text) => '<a href="' + P.esc(href) + '" target="_blank" rel="noopener">' + text + "</a>";
+  function supDetail(s, secs) {
+    if (s.headings) return supLink(s.url, "Find " + secs.map(x => "“" + P.esc(x[0]) + "”").join(", "));
+    const ranges = pageRanges(secs);
+    const pp = ranges.length === 1 && ranges[0][0] === ranges[0][1] ? "p. " : "pp. ";
+    if (!s.pageLinks) return supLink(s.url, pp + ranges.map(rangeText).join(", "));
+    return pp + ranges.map(r => supLink(SUP.pageUrl(s, r[0]), rangeText(r))).join(", ");
+  }
+  function supplementRows(c) {
+    if (!kaNotesOn || c.res !== "khanacademy" || c.subject !== "Behavioral") return "";
+    const s = SUP.byKey[kaNotes], secs = SUP.sectionsFor(kaNotes, c);
+    if (!s || !secs.length) return "";
+    const key = "s:ka:" + c.id, done = !!progress.items[key];
+    return '<div class="sup-list"><div class="sup' + (done ? " done" : "") + '"><input type="checkbox" data-item="' + key + '"' + (done ? " checked" : "") +
+      ' aria-label="Done: KA P/S notes for ' + P.esc(c.topic) + '"><span><b>' + P.esc(s.short) + "</b> · " + supDetail(s, secs) + "</span></div></div>";
   }
   function itemTask(key, kindCls, kindText, what, sub) {
     const done = !!progress.items[key];
@@ -320,11 +350,34 @@
       weeksEl.querySelectorAll('input[data-ch="' + box.dataset.ch + '"]').forEach(x => { x.checked = box.checked; x.closest(".task").classList.toggle("done", box.checked); });
     } else if (box.dataset.item) {
       if (box.checked) progress.items[box.dataset.item] = true; else delete progress.items[box.dataset.item];
-      (box.closest(".task") || box.closest(".set")).classList.toggle("done", box.checked);
+      weeksEl.querySelectorAll('input[data-item="' + box.dataset.item + '"]').forEach(x => { x.checked = box.checked; (x.closest(".task") || x.closest(".set") || x.closest(".sup")).classList.toggle("done", box.checked); });
     } else return;
     P.saveProgress(plan.id, progress);
     renderStatus();
   });
+
+  // Study resources: every supplement in the plan, whole
+  const khanPS = D.res.chapters.some(c => c.res === "khanacademy" && c.subject === "Behavioral");
+  if (supOn.length) {
+    const btn = document.createElement("button");
+    btn.className = "btn btn-plain btn-sm";
+    btn.type = "button";
+    btn.textContent = "Study resources";
+    $("toolbar").firstElementChild.replaceWith(btn);
+    const host = h => { try { return new URL(h).hostname.replace(/^www\./, ""); } catch (e) { return h; } };
+    $("supList").innerHTML = supOn.map(s =>
+      '<div class="shelf-item"><div class="shelf-top"><div><h3>' + P.esc(s.title) + '</h3><div class="hint">' + P.esc(s.by) + " · " + P.esc(s.kind) + (s.pages ? " · " + s.pages + " pages" : "") + "</div></div>" +
+      '<a class="btn btn-sm" href="' + P.esc(s.url) + '" target="_blank" rel="noopener">Open</a></div>' +
+      "<p>" + P.esc(s.about) + (kaNotesOn && khanPS && s.key === kaNotes ? (s.headings ? " The heading" : " The pages") + " for each Khan Academy unit " + (s.headings ? "is" : "are") + " listed under it in your plan." : "") + "</p>" +
+      ((s.shelf || []).length ? '<ul class="shelf-extra">' + s.shelf.map(x => {
+        const pg = x[2] ? "pp. " + x[1] + "–" + x[2] : "p. " + x[1];
+        return "<li><span>" + P.esc(x[0]) + "</span>" + (s.pageLinks ? supLink(SUP.pageUrl(s, x[1]), pg) : "<span>" + pg + "</span>") + "</li>";
+      }).join("") + "</ul>" : "") +
+      '<p class="hint">' + (s.source ? "Shared by " + P.esc(s.by) + " · " + supLink(s.source, P.esc(host(s.source))) : "Hosted at " + P.esc(host(s.url))) + "</p></div>").join("");
+    const sdlg = $("supDlg");
+    btn.addEventListener("click", () => { if (sdlg.showModal) sdlg.showModal(); else sdlg.setAttribute("open", ""); });
+    $("supClose").addEventListener("click", () => sdlg.close ? sdlg.close() : sdlg.removeAttribute("open"));
+  }
 
   // Jump to this week (daily and weekly views)
   const jump = $("jumpBtn");

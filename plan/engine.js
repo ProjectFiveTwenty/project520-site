@@ -40,6 +40,7 @@
     offDays: [],
     qbank: "UWorld",
     deck: "anking",              // Anki deck the client uses: anking | captainhook | miledown
+    kaNotes: "ka300",            // KA P/S notes under Khan Academy Behavioral units: ka300 | ka86 | off
     qtable: [                    // index 1..8: Qs per block, blocks per day, content-aligned
       { q: 10, b: 1, aligned: true },
       { q: 15, b: 1, aligned: true },
@@ -78,6 +79,7 @@
     out.offDays = (out.offDays || []).filter(Boolean).sort();
     out.dropped = Array.isArray(out.dropped) ? out.dropped : [];
     out.resourceBySubject = out.resourceBySubject && typeof out.resourceBySubject === "object" ? out.resourceBySubject : {};
+    out.kaNotes = out.kaNotes === "ka86" || out.kaNotes === "off" ? out.kaNotes : out.kaNotes === false ? "off" : "ka300";
     out.history = Array.isArray(out.history) ? out.history : [];
     if (out.baseline && !out.baseline.date) out.baseline = null;
     if (!out.id) out.id = makeId();
